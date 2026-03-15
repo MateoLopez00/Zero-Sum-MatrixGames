@@ -39,11 +39,14 @@ This repository reproduces the experimental setup requested for:
 
 ## Project Structure
 
-- `algorithms/`: row-player algorithm implementations (Section 3 and Section 4).
-- `core/`: shared environment, NE solver, adversary, and utilities.
-- `experiments/`: experiment runners and plotting logic.
-- Root wrappers (`experiments_section3.py`, `experiments_section4.py`, `reproduction.py`) keep the CLI simple.
-- `official_paper_code/`: raw cloned reference code from the paper authors.
+- `core/`: shared helper utilities used by the experiment scripts.
+- `core/utils.py`: helper utilities (seed setup, directory creation, small utility functions).
+- `experiments/`: main experiment runners and plotting logic.
+- `experiments/section3.py`: official-style Section 3 pipeline and plotting.
+- `experiments/section4.py`: official-style Section 4 pipeline and plotting.
+- `experiments_section3.py`: lightweight CLI wrapper for Section 3.
+- `experiments_section4.py`: lightweight CLI wrapper for Section 4.
+- `reproduction.py`: one-command runner for both sections.
 - `plots/`: generated PNG figures from experiment runs.
 - `requirements.txt`: Python dependency list for reproducible setup.
 - `pyproject.toml`: project metadata and Python tooling configuration.
