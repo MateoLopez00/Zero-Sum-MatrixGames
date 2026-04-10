@@ -4,3 +4,7 @@ __pycache__/
 .python-version
 plots/
 
+# Keep Section 3 documentation figures under version control
+!Full_information_feedback/plots/
+!Full_information_feedback/plots/*.png
+
