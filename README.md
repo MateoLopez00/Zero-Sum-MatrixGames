@@ -1,141 +1,117 @@
-# Zero-Sum Matrix Games (Seminar Reproduction)
+# Zero-Sum Matrix Games: Paper Reproduction
 
-This repository reproduces the experimental setup requested for:
+Reproduction of the experimental setup from *On the Limitations and Possibilities of Nash Regret Minimization in Zero-Sum Matrix Games under Noisy Feedback* (arXiv:2306.13233v3).
 
-- **Paper**: *On the Limitations and Possibilities of Nash Regret Minimization in Zero-Sum Matrix Games under Noisy Feedback* (arXiv:2306.13233v3)
-- **Target sections**: **Section 3** (full-information) and **Section 4** (bandit feedback, 2x2)
+- Section 3 (full-information feedback): `Full_information_feedback/`
+- Section 4 (bandit feedback, 2x2): `Bandit_feedback/`
 
-## What is implemented
+---
 
-- Paper-locked experiment protocols (matrix/adversary/horizon grids).
-- Section 3: Hedge, Empirical-Nash baseline, and Section-3-style algorithm.
-- Section 4: UCB baseline, EXP3 baseline, and Section-4-style 2x2 algorithm.
-- Nash regret evaluation against game value.
-- Log-log plots saved as PNG files.
+# Full-information feedback (Section 3) reproduction
 
-## Locked Experiment Specs (Paper-Aligned)
-
-### Section 3
-
-- Input matrices: 4 diagonal matrices of size `10x10`, `20x20`, `50x50`, `100x100`.
-- Diagonal entries: `A[i,i] = 0.4 + 0.2*(i-1)/(n-1)`.
-- Adversary: best-response at every step.
-- Plot type: `log(total Nash regret)` vs `log(T)` for multiple horizons.
-
-### Section 4
-
-- Input matrix: `[[2/3, 0], [0, 1/3]]`.
-- Adversaries:
-  - `adv1`: equilibrium first half, best-response second half.
-  - `adv2`: best-response throughout.
-  - `adv3`: adaptive (equilibrium vs best-response) first half, best-response second half.
-- Plot type: `log(total Nash regret)` vs `log(T)`.
-
-## Main Scripts
-
-- `experiments_section3.py`: Section 3 log-log plots.
-- `experiments_section4.py`: Section 4 log-log plots.
-- `reproduction.py`: runs Section 3 and Section 4 in sequence.
-
-## Project Structure
-
-- `core/`: shared helper utilities used by the experiment scripts.
-- `core/utils.py`: helper utilities (seed setup, directory creation, small utility functions).
-- `experiments/`: main experiment runners and plotting logic.
-- `experiments/section3.py`: official-style Section 3 pipeline and plotting.
-- `experiments/section4.py`: official-style Section 4 pipeline and plotting.
-- `experiments_section3.py`: lightweight CLI wrapper for Section 3.
-- `experiments_section4.py`: lightweight CLI wrapper for Section 4.
-- `reproduction.py`: one-command runner for both sections.
-- `plots/`: generated PNG figures from experiment runs.
-- `requirements.txt`: Python dependency list for reproducible setup.
-- `pyproject.toml`: project metadata and Python tooling configuration.
-
-## Runtime Presets (Staged Plan)
-
-Each script supports `--preset {quick|medium|paper-lite|final|paper}`:
-
-- `quick`: fast sanity check
-- `medium`: stronger validation
-- `paper-lite`: paper-style setup with reduced compute (around 30-60 min on CPU, machine-dependent)
-- `final`: paper-like horizon/trial settings (slow)
-- `paper`: exact official full settings for true paper reproduction
-  - Section 3: `T=10^1..10^7`, `runs=100`
-  - Section 4: `T=10^1..10^8`, `runs=128`
-
-## Simple Step-by-Step
-
-1. Open a terminal in this project folder.
-2. Install libraries:
-   - `pip install -r requirements.txt`
-3. Run a very fast check:
-   - `python reproduction.py --preset quick`
-4. Run a better check:
-   - `python reproduction.py --preset medium`
-5. Look at generated plots in:
-   - `plots/`
-
-If Python env is already active, just run steps 3 and 4.
-
-## Run (workload from low-to-high because computing times can be extensive, first try with quick!)
+## Install
 
 ```bash
-python experiments_section3.py --preset quick
-python experiments_section4.py --preset quick
+cd Full_information_feedback
+pip install -r requirements.txt
 ```
 
-Medium:
+## Setting
+
+`n x n` diagonal matrix game with `A[i,i] = 0.4 + 0.2*(i-1)/(n-1)`. Each round the row player sees the **full noisy payoff row** (full-information feedback) and the column player always plays best-response. Plots show `log(total Nash regret)` vs `log(T)` for Our-Algo, Nash-empirical baseline, and Hedge, across `n = 10, 20, 50, 100`. The claim: Our-Algo achieves `polylog(T)` Nash regret while Hedge grows as `sqrt(T)`.
+
+## Reproduce the 4 plots (paper-lite, official)
 
 ```bash
-python experiments_section3.py --preset medium
-python experiments_section4.py --preset medium
+cd Full_information_feedback
+python experiments_section3.py --preset paper-lite --variant official --n_actions 10
 ```
 
-Paper-lite:
+At **n=10**, Our-Algo grows much slower than Nash and Hedge.
+
+![Section 3 paper-lite n=10](Full_information_feedback/plots/section3_official_style_paper-lite_n10.png)
 
 ```bash
-python experiments_section3.py --preset paper-lite
-python experiments_section4.py --preset paper-lite
+cd Full_information_feedback
+python experiments_section3.py --preset paper-lite --variant official --n_actions 20
 ```
 
-Final:
+At **n=20**, the same qualitative behavior holds: the proposed method has a flatter regret curve than the baselines.
+
+![Section 3 paper-lite n=20](Full_information_feedback/plots/section3_official_style_paper-lite_n20.png)
 
 ```bash
-python experiments_section3.py --preset final
-python experiments_section4.py --preset final
+cd Full_information_feedback
+python experiments_section3.py --preset paper-lite --variant official --n_actions 50
 ```
 
-Paper (exact official full settings):
+At **n=50**, the proposed method continues to outperform the baselines across horizons.
+
+![Section 3 paper-lite n=50](Full_information_feedback/plots/section3_official_style_paper-lite_n50.png)
 
 ```bash
-python experiments_section3.py --preset paper
-python experiments_section4.py --preset paper
+cd Full_information_feedback
+python experiments_section3.py --preset paper-lite --variant official --n_actions 100
 ```
 
-Run both sections:
+At **n=100**, the gap vs Nash/Hedge is still visible under the same experimental protocol.
+
+![Section 3 paper-lite n=100](Full_information_feedback/plots/section3_official_style_paper-lite_n100.png)
+
+## Empirical vs theoretical
+
+On log-log axes, a `sqrt(T)` regret rate shows up as a straight line with slope `0.5`, while a `polylog(T)` rate appears as a curve that *flattens* toward slope `0` as `T` grows. The paper's theoretical rates for this setting are:
+
+- **Our-Algo:** `polylog(T)` (with an extra dependence on `n`).
+- **Hedge:** `O(sqrt(T log n))`, the standard online learning bound.
+- **Nash (empirical):** `O(sqrt(T))`, a baseline that plays Nash of the empirical matrix.
+
+The four plots above match this: Hedge and Nash trace approximately straight lines with slope near `0.5`, while Our-Algo's curve visibly flattens across horizons, consistent with the `polylog(T)` rate. The `n`-dependence predicted by the theory is also visible, since the gap between Our-Algo and the baselines shrinks as `n` grows from 10 to 100, though Our-Algo still stays clearly below `sqrt(T)` behavior.
+
+---
+
+# Bandit feedback (Section 4) reproduction
+
+## Install
 
 ```bash
-python reproduction.py --preset quick
+cd Bandit_feedback
+pip install numpy matplotlib pandas jupyter
 ```
 
-One-command paper-lite reproduction:
+## Setting
+
+2x2 diagonal matrix game `A = [[2/3, 0], [0, 1/3]]` with Nash equilibrium `x* = y* = (1/3, 2/3)` and value `V* = 2/9`. Each round the row player observes **only the Bernoulli-sampled entry `A[i_t, j_t]`** at the played cell (bandit feedback), not the full row. Every trial runs in two phases of length `T/2`: Phase 1 uses a phase-specific adversary, Phase 2 always uses pure best-response. Our-Algo (Algorithm 6) is compared against UCB and EXP3 against three column adversaries:
+
+- **Adversary 1 (threshold BR):** plays pure best-response the moment `x1` deviates from `1/3`.
+- **Adversary 2 (tolerance BR):** same as Adversary 1 but with a `±1/sqrt(T)` tolerance band around Nash before punishing.
+- **Adversary 3 (Nash -> BR):** plays Nash `y* = (1/3, 2/3)` during Phase 1, then switches to pure best-response in Phase 2.
+
+The plot shows `log(total Nash regret)` vs `log(T)` for each adversary. The claim: Our-Algo achieves `polylog(T)` Nash regret against **all three** adversaries.
+
+## Reproduce Figure 2 (paper Section 4.1)
 
 ```bash
-python reproduction.py --preset paper-lite
+cd Bandit_feedback
+jupyter notebook section4_reproduction.ipynb
 ```
 
-True one-command paper reproduction:
+Run all cells top-to-bottom. The standalone script `section4_bandit.py` runs the same pipeline from the command line:
 
 ```bash
-python reproduction.py --preset paper
+cd Bandit_feedback
+python section4_bandit.py
 ```
 
-## Output
+Across all three adversaries, Our-Algo stays essentially flat while UCB and EXP3 grow polynomially, most dramatically against Adversary 3, matching the paper's core claim.
 
-PNG files are generated under `plots/`:
+![Section 4 Figure 2](Bandit_feedback/section4_fig2.png)
 
-- `plots/section3_official_style_<preset>.png`
-- `plots/section4_official_style_<preset>.png`
+## Empirical vs theoretical
 
-Plot titles include the active runtime config (`preset`, `runs`, `horizons`).
+The paper's theoretical rates for the `2x2` bandit setting are:
 
+- **Our-Algo (Algorithm 6):** `polylog(T)` Nash regret against any column adversary.
+- **UCB and EXP3:** both are `Omega(sqrt(T))` in this adversarial regime. UCB fails because it is built for stochastic, not adversarial, columns; EXP3 fails because of the general lower bound in the paper's Theorem 3.
+
+On log-log axes this means Our-Algo should have a slope that flattens toward `0`, while UCB and EXP3 should sit on straight lines with slope near `0.5`. Figure 2 matches this prediction: Our-Algo's curve is essentially flat against all three adversaries (most visibly against Adversary 3), while UCB and EXP3 grow at roughly `sqrt(T)` rate. The empirical results therefore align with the theoretical regret bounds claimed in Section 4.

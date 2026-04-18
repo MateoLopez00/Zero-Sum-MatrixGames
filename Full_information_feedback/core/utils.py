@@ -23,4 +23,3 @@ def ensure_dir(path: str | Path) -> Path:
 def clipped_sqrt_confidence(t: int, scale: float = 2.0, log_factor: float = 1.0) -> float:
     t = max(1, t)
     return scale * math.sqrt(log_factor / t)
-
