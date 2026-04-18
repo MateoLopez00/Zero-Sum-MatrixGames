@@ -24,6 +24,7 @@ Three adversaries (matching the three reference files):
 """
 
 from __future__ import annotations
+import os
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
@@ -488,7 +489,7 @@ if __name__ == "__main__":
 
     results = run_all(A, T_list, N, verbose=True)
 
-    out_path = "/home/dex/D/FS2026/RL seminar/game_theory_lab/section4_fig2.png"
+    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "section4_fig2_reproduced.png")
     plot_figure2(T_list, results, save_path=out_path)
 
     print("\n── Nash Regret Summary (raw values) " + "─"*30)
