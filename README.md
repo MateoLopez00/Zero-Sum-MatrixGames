@@ -1,4 +1,4 @@
-# Zero-Sum Matrix Games — Paper Reproduction
+# Zero-Sum Matrix Games: Paper Reproduction
 
 Reproduction of the experimental setup from *On the Limitations and Possibilities of Nash Regret Minimization in Zero-Sum Matrix Games under Noisy Feedback* (arXiv:2306.13233v3).
 
@@ -63,10 +63,10 @@ At **n=100**, the gap vs Nash/Hedge is still visible under the same experimental
 On log-log axes, a `sqrt(T)` regret rate shows up as a straight line with slope `0.5`, while a `polylog(T)` rate appears as a curve that *flattens* toward slope `0` as `T` grows. The paper's theoretical rates for this setting are:
 
 - **Our-Algo:** `polylog(T)` (with an extra dependence on `n`).
-- **Hedge:** `O(sqrt(T log n))` — standard online learning bound.
-- **Nash (empirical):** `O(sqrt(T))` — baseline that plays Nash of the empirical matrix.
+- **Hedge:** `O(sqrt(T log n))`, the standard online learning bound.
+- **Nash (empirical):** `O(sqrt(T))`, a baseline that plays Nash of the empirical matrix.
 
-The four plots above match this: Hedge and Nash trace approximately straight lines with slope near `0.5`, while Our-Algo's curve visibly flattens across horizons, consistent with the `polylog(T)` rate. The `n`-dependence predicted by the theory is also visible — the gap between Our-Algo and the baselines shrinks as `n` grows from 10 to 100, though Our-Algo still stays clearly below `sqrt(T)` behavior.
+The four plots above match this: Hedge and Nash trace approximately straight lines with slope near `0.5`, while Our-Algo's curve visibly flattens across horizons, consistent with the `polylog(T)` rate. The `n`-dependence predicted by the theory is also visible, since the gap between Our-Algo and the baselines shrinks as `n` grows from 10 to 100, though Our-Algo still stays clearly below `sqrt(T)` behavior.
 
 ---
 
@@ -103,7 +103,7 @@ cd Bandit_feedback
 python section4_bandit.py
 ```
 
-Across all three adversaries, Our-Algo stays essentially flat while UCB and EXP3 grow polynomially — most dramatically against Adversary 3, matching the paper's core claim.
+Across all three adversaries, Our-Algo stays essentially flat while UCB and EXP3 grow polynomially, most dramatically against Adversary 3, matching the paper's core claim.
 
 ![Section 4 Figure 2](Bandit_feedback/section4_fig2.png)
 
@@ -112,6 +112,6 @@ Across all three adversaries, Our-Algo stays essentially flat while UCB and EXP3
 The paper's theoretical rates for the `2x2` bandit setting are:
 
 - **Our-Algo (Algorithm 6):** `polylog(T)` Nash regret against any column adversary.
-- **UCB and EXP3:** both are `Omega(sqrt(T))` in this adversarial regime — UCB because it is built for stochastic, not adversarial, columns; EXP3 because of the general lower bound in the paper's Theorem 3.
+- **UCB and EXP3:** both are `Omega(sqrt(T))` in this adversarial regime. UCB fails because it is built for stochastic, not adversarial, columns; EXP3 fails because of the general lower bound in the paper's Theorem 3.
 
-On log-log axes this means Our-Algo should have a slope that flattens toward `0`, while UCB and EXP3 should sit on straight lines with slope near `0.5`. Figure 2 matches this prediction: Our-Algo's curve is essentially flat against all three adversaries — most visibly against Adversary 3 — while UCB and EXP3 grow at roughly `sqrt(T)` rate. The empirical results therefore align with the theoretical regret bounds claimed in Section 4.
+On log-log axes this means Our-Algo should have a slope that flattens toward `0`, while UCB and EXP3 should sit on straight lines with slope near `0.5`. Figure 2 matches this prediction: Our-Algo's curve is essentially flat against all three adversaries (most visibly against Adversary 3), while UCB and EXP3 grow at roughly `sqrt(T)` rate. The empirical results therefore align with the theoretical regret bounds claimed in Section 4.
