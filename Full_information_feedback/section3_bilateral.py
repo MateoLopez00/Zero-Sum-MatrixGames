@@ -71,47 +71,6 @@ def _value_of_diag_game(A: np.ndarray) -> float:
     return 1.0 / den
 
 
-def _nash_equilibrium_lp(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, float]:
-    A = np.asarray(A, dtype=float)
-    n, m = A.shape
-    c = np.zeros(n + 1, dtype=float)
-    c[-1] = -1.0
-    A_ub = np.hstack([-A.T, np.ones((m, 1), dtype=float)])
-    b_ub = np.zeros(m, dtype=float)
-    A_eq = np.zeros((1, n + 1), dtype=float)
-    A_eq[0, :n] = 1.0
-    b_eq = np.array([1.0], dtype=float)
-    bounds = [(0.0, 1.0)] * n + [(None, None)]
-    res = linprog(
-        c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-        bounds=bounds, method="highs"
-    )
-    if not res.success:
-        raise RuntimeError(f"Row-player LP failed: {res.message}")
-    x = np.maximum(res.x[:n], 0.0)
-    x /= max(1e-12, float(np.sum(x)))
-    v = float(res.x[-1])
-
-    c2 = np.zeros(m + 1, dtype=float)
-    c2[-1] = 1.0
-    A_ub2 = np.hstack([A, -np.ones((n, 1), dtype=float)])
-    b_ub2 = np.zeros(n, dtype=float)
-    A_eq2 = np.zeros((1, m + 1), dtype=float)
-    A_eq2[0, :m] = 1.0
-    b_eq2 = np.array([1.0], dtype=float)
-    bounds2 = [(0.0, 1.0)] * m + [(None, None)]
-    res2 = linprog(
-        c2, A_ub=A_ub2, b_ub=b_ub2, A_eq=A_eq2, b_eq=b_eq2,
-        bounds=bounds2, method="highs"
-    )
-    if not res2.success:
-        raise RuntimeError(f"Column-player LP failed: {res2.message}")
-    y = np.maximum(res2.x[:m], 0.0)
-    y /= max(1e-12, float(np.sum(y)))
-    w = float(res2.x[-1])
-    return x, y, 0.5 * (v + w)
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Original Algo Just Row
 # ─────────────────────────────────────────────────────────────────────────────
@@ -187,7 +146,7 @@ def run_official_diag_algo(seed: int, horizon: int, n: int) -> float:
         reg += V - val
         Bsamp = generate_bernoulli_diagonal_matrix(B, rng)
         B1 = (t / (t + 1)) * B1 + (1.0 / (t + 1)) * Bsamp
-        reg += V - val
+        #reg += V - val
     return float(max(reg, 1e-12))
 
 
@@ -333,12 +292,12 @@ class OurRowPlayer(Player):
     def update(self, A_sample: np.ndarray, opponent_strategy: np.ndarray) -> None:
         self.Abar_accum += A_sample
         self.t += 1
-        j = int(np.argmax(opponent_strategy))
         if self._phase == "burnin":
             if self.t >= self.t_star:
                 self._init_subroutine()
             return
-        g = self._A_hat[:-1, j] - self._A_hat[-1, j]
+        # Use full opponent strategy (mixed) instead of just argmax
+        g = (self._A_hat[:-1, :] - self._A_hat[-1, :]) @ opponent_strategy
         self._delta = np.clip(
             self._delta + self._eta_sub * g, -self._clip, self._clip
         )
@@ -398,13 +357,12 @@ class OurColumnPlayer(Player):
     def update(self, A_sample: np.ndarray, opponent_strategy: np.ndarray) -> None:
         self.Abar_accum += A_sample
         self.t += 1
-        i = int(np.argmax(opponent_strategy))
         if self._phase == "burnin":
             if self.t >= self.t_star:
                 self._init_subroutine()
             return
-        # Minimice
-        g = -(self._A_hat[i, :-1] - self._A_hat[i, -1])
+        # Minimize: use full opponent strategy (mixed) instead of just argmax
+        g = -(self._A_hat[:, :-1].T @ opponent_strategy - self._A_hat[:, -1] @ opponent_strategy)
         self._delta = np.clip(
             self._delta + self._eta_sub * g, -self._clip, self._clip
         )
@@ -444,7 +402,7 @@ def run_match(
         x = row_player.get_strategy()
         y = col_player.get_strategy()
         val = float(x @ A @ y)
-        reg += abs(V - val)
+        reg += V - val
         A_sample = generate_bernoulli_diagonal_matrix(A, rng)
         row_player.update(A_sample, y)
         col_player.update(A_sample, x)
@@ -499,9 +457,11 @@ def run(config: RunConfig) -> None:
         ("Our vs Hedge",   run_our_vs_hedge,   "#e377c2"),
         ("Nash vs Nash",   run_nash_vs_nash,   "#7f7f7f"),
         ("Our vs Nash",    run_our_vs_nash,    "#bcbd22"),
-    ]
+    ]  
 
-    all_specs = original_specs + bilateral_specs
+    # all_specs = original_specs + bilateral_specs
+    # Solo Our vs Our
+    all_specs = [("Our vs Our",     run_our_vs_our,     "#9467bd")]
 
     fig, ax = plt.subplots(figsize=(9, 5))
 
@@ -529,17 +489,24 @@ def run(config: RunConfig) -> None:
     xmin, xmax = float(np.min(x_axis)), float(np.max(x_axis))
     ax.set_xlim(max(0.5, xmin - 0.25), min(7.5, xmax + 0.25))
     ax.set_xticks(np.arange(int(np.floor(xmin)), int(np.ceil(xmax)) + 1))
-    ax.set_ylim(-1.5, 3.0)
+    ax.set_ylim(None, None)  # Automatic scaling
     ax.yaxis.set_major_locator(MultipleLocator(0.2))
     ax.grid(True, which="both", ls=":")
     ax.legend(loc="upper left", fontsize=8, ncol=2)
+    # ax.set_title(
+    #     f"{config.n_actions}×{config.n_actions} diagonal matrix — "
+    #     f"original (--) vs bilateral (—)"
+    # )
     ax.set_title(
-        f"{config.n_actions}×{config.n_actions} diagonal matrix — "
-        f"original (--) vs bilateral (—)"
+        f"{config.n_actions}×{config.n_actions} diagonal matrix — Our vs Our"
     )
     plt.tight_layout()
+    # plt.savefig(
+    #     f"plots/section3_bilateral_{config.preset}_n{config.n_actions}.png",
+    #     dpi=170,
+    # )
     plt.savefig(
-        f"plots/section3_bilateral_{config.preset}_n{config.n_actions}.png",
+        f"plots/section3_our_vs_our_{config.preset}_n{config.n_actions}.png",
         dpi=170,
     )
     plt.show()
