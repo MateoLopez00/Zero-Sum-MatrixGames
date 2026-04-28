@@ -117,16 +117,13 @@ The first plot keeps the paper's log-log Nash regret style, so it remains direct
 
 Uniform and Nash stochastic opponents test whether simple non-adaptive behavior changes the need for an adversarially robust row algorithm. The Hedge opponent is an intermediate case: the column player learns from the row player, but it is still more structured than a pure best-response adversary.
 
-<table>
-  <tr>
-    <td width="50%"><img src="Extensions/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_paper-lite.png" width="100%"></td>
-    <td width="50%"><img src="Extensions/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_payoff_paper-lite.png" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Nash regret</b></td>
-    <td align="center"><b>Average payoff</b></td>
-  </tr>
-</table>
+<p align="center"><b>Nash regret</b></p>
+
+![Section 4 non-adversarial regret](Extensions/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_paper-lite.png)
+
+<p align="center"><b>Average payoff</b></p>
+
+![Section 4 non-adversarial average payoff](Extensions/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_payoff_paper-lite.png)
 
 The Nash-regret plot shows that all methods have essentially zero regret against the fixed Nash opponent, as expected. Against the Hedge opponent, EXP3 accumulates more regret than UCB and OurAlg, while OurAlg remains the most stable. Against the uniform opponent, regret is not very informative because the row player can get payoff above the game value.
 
@@ -167,16 +164,13 @@ For Section 3, increasing `sigma` mostly affects the baselines. The Nash baselin
 
 The average-payoff plot shows the same pattern in a less amplified scale. Payoffs decrease mildly as noise increases, but they do not collapse. This supports the expected behavior: full-information feedback is relatively robust because the learner receives a complete noisy matrix signal each round.
 
-<table>
-  <tr>
-    <td width="50%"><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_noise_regret_paper-lite.png" width="100%"></td>
-    <td width="50%"><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_noise_payoff_paper-lite.png" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Section 4: Nash regret vs noise</b></td>
-    <td align="center"><b>Section 4: Average payoff vs noise</b></td>
-  </tr>
-</table>
+<p align="center"><b>Section 4: Nash regret vs noise</b></p>
+
+![Section 4 noise regret](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_noise_regret_paper-lite.png)
+
+<p align="center"><b>Section 4: Average payoff vs noise</b></p>
+
+![Section 4 noise payoff](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_noise_payoff_paper-lite.png)
 
 For Section 4, the effect of noise is stronger. Against Adversaries 1 and 2, regret generally increases with `sigma`, especially for EXP3 and OurAlg. Against Adversary 3, UCB and EXP3 become much worse as noise increases, while OurAlg remains close to flat.
 
