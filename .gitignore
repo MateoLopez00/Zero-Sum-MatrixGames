@@ -8,3 +8,7 @@ plots/
 !Full_information_feedback/plots/
 !Full_information_feedback/plots/*.png
 
+# Keep Section 4 extension documentation figures under version control
+!Bandit_feedback/Bandit_Feedback_extension_non_adversarial/plots/
+!Bandit_feedback/Bandit_Feedback_extension_non_adversarial/plots/*.png
+
