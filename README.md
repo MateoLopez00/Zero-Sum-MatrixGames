@@ -119,3 +119,37 @@ The Nash-regret plot shows that all methods have essentially zero regret against
 ![Section 4 non-adversarial average payoff](Bandit_feedback/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_payoff_paper-lite.png)
 
 The average-payoff plot makes the non-adversarial cases clearer. Under the Nash opponent, all algorithms stay at the game value `V* = 2/9`. Under the uniform opponent, EXP3 and OurAlg exploit the fixed column mixture and obtain payoff above `V*`. Under the Hedge opponent, payoffs stay close to `V*`, which indicates a more balanced interaction than the fixed uniform opponent but a less hostile one than pure best response.
+
+---
+
+# Extension: Noise Robustness
+
+This extension varies the Gaussian feedback noise level `sigma` and compares how regret and average payoff change. Section 3 uses full-information Gaussian matrix feedback, while Section 4 uses Gaussian bandit feedback only at the played cell. The expectation is that Section 3 is more robust because the learner observes much more feedback each round, while Section 4 is more sensitive to noise.
+
+The Section 3 extension is isolated in:
+
+- `Full_information_feedback/Extension_Noise_Robustness/`
+
+The Section 4 extension is isolated in:
+
+- `Bandit_feedback/Extension_Noise_Robustness/`
+
+## Noise robustness results
+
+The Section 3 plots below were generated with `Full_information_feedback/Extension_Noise_Robustness/section3_noise_robustness.ipynb` using the `medium` preset. The Section 4 plots were generated with `Bandit_feedback/Extension_Noise_Robustness/section4_noise_robustness.ipynb` using the `paper-lite` preset.
+
+![Section 3 noise regret](Full_information_feedback/Extension_Noise_Robustness/plots/section3_noise_regret_medium.png)
+
+For Section 3, increasing `sigma` mostly affects the baselines. The Nash baseline becomes noticeably worse as noise increases, especially for smaller games such as `n=10` and `n=20`. Hedge also degrades with noise, while Our-Algo remains comparatively stable across the tested noise levels.
+
+![Section 3 noise payoff](Full_information_feedback/Extension_Noise_Robustness/plots/section3_noise_payoff_medium.png)
+
+The average-payoff plot shows the same pattern in a less amplified scale. Payoffs decrease mildly as noise increases, but they do not collapse. This supports the expected behavior: full-information feedback is relatively robust because the learner receives a complete noisy matrix signal each round.
+
+![Section 4 noise regret](Bandit_feedback/Extension_Noise_Robustness/plots/section4_noise_regret_paper-lite.png)
+
+For Section 4, the effect of noise is stronger. Against Adversaries 1 and 2, regret generally increases with `sigma`, especially for EXP3 and OurAlg. Against Adversary 3, UCB and EXP3 become much worse as noise increases, while OurAlg remains close to flat.
+
+![Section 4 noise payoff](Bandit_feedback/Extension_Noise_Robustness/plots/section4_noise_payoff_paper-lite.png)
+
+The average-payoff plot confirms that bandit feedback is more sensitive to noise. UCB and EXP3 lose payoff under high noise, most clearly against Adversary 3. OurAlg stays close to the game value `V* = 2/9`, which matches the paper's claim that the proposed bandit algorithm is more stable under difficult feedback conditions.

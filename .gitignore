@@ -12,3 +12,9 @@ plots/
 !Bandit_feedback/Bandit_Feedback_extension_non_adversarial/plots/
 !Bandit_feedback/Bandit_Feedback_extension_non_adversarial/plots/*.png
 
+# Keep noise robustness extension figures under version control
+!Full_information_feedback/Extension_Noise_Robustness/plots/
+!Full_information_feedback/Extension_Noise_Robustness/plots/*.png
+!Bandit_feedback/Extension_Noise_Robustness/plots/
+!Bandit_feedback/Extension_Noise_Robustness/plots/*.png
+
