@@ -26,16 +26,16 @@ The four plots below were generated with `Full_information_feedback/experiments_
 
 <table>
   <tr>
-    <td><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n10.png" width="420"></td>
-    <td><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n20.png" width="420"></td>
+    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n10.png" width="100%"></td>
+    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n20.png" width="100%"></td>
   </tr>
   <tr>
     <td align="center"><b>n = 10</b></td>
     <td align="center"><b>n = 20</b></td>
   </tr>
   <tr>
-    <td><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n50.png" width="420"></td>
-    <td><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n100.png" width="420"></td>
+    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n50.png" width="100%"></td>
+    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n100.png" width="100%"></td>
   </tr>
   <tr>
     <td align="center"><b>n = 50</b></td>
@@ -119,8 +119,8 @@ Uniform and Nash stochastic opponents test whether simple non-adaptive behavior 
 
 <table>
   <tr>
-    <td><img src="Extensions/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_paper-lite.png" width="420"></td>
-    <td><img src="Extensions/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_payoff_paper-lite.png" width="420"></td>
+    <td width="50%"><img src="Extensions/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_paper-lite.png" width="100%"></td>
+    <td width="50%"><img src="Extensions/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_payoff_paper-lite.png" width="100%"></td>
   </tr>
   <tr>
     <td align="center"><b>Nash regret</b></td>
@@ -154,8 +154,8 @@ The Section 3 plots below were generated with `Extensions/Extension_Noise_Robust
 
 <table>
   <tr>
-    <td><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_noise_regret_medium.png" width="420"></td>
-    <td><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_noise_payoff_medium.png" width="420"></td>
+    <td width="50%"><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_noise_regret_medium.png" width="100%"></td>
+    <td width="50%"><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_noise_payoff_medium.png" width="100%"></td>
   </tr>
   <tr>
     <td align="center"><b>Section 3: Nash regret vs noise</b></td>
@@ -169,8 +169,8 @@ The average-payoff plot shows the same pattern in a less amplified scale. Payoff
 
 <table>
   <tr>
-    <td><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_noise_regret_paper-lite.png" width="420"></td>
-    <td><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_noise_payoff_paper-lite.png" width="420"></td>
+    <td width="50%"><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_noise_regret_paper-lite.png" width="100%"></td>
+    <td width="50%"><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_noise_payoff_paper-lite.png" width="100%"></td>
   </tr>
   <tr>
     <td align="center"><b>Section 4: Nash regret vs noise</b></td>
