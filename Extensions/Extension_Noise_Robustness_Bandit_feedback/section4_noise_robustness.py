@@ -15,7 +15,8 @@ import matplotlib.ticker as plticker
 import numpy as np
 
 
-BANDIT_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+BANDIT_DIR = REPO_ROOT / "Bandit_feedback"
 if str(BANDIT_DIR) not in sys.path:
     sys.path.insert(0, str(BANDIT_DIR))
 

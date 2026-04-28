@@ -15,7 +15,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-FULL_INFO_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FULL_INFO_DIR = REPO_ROOT / "Full_information_feedback"
 if str(FULL_INFO_DIR) not in sys.path:
     sys.path.insert(0, str(FULL_INFO_DIR))
 
