@@ -115,3 +115,50 @@ The paper's theoretical rates for the `2x2` bandit setting are:
 - **UCB and EXP3:** both are `Omega(sqrt(T))` in this adversarial regime. UCB fails because it is built for stochastic, not adversarial, columns; EXP3 fails because of the general lower bound in the paper's Theorem 3.
 
 On log-log axes this means Our-Algo should have a slope that flattens toward `0`, while UCB and EXP3 should sit on straight lines with slope near `0.5`. Figure 2 matches this prediction: Our-Algo's curve is essentially flat against all three adversaries (most visibly against Adversary 3), while UCB and EXP3 grow at roughly `sqrt(T)` rate. The empirical results therefore align with the theoretical regret bounds claimed in Section 4.
+
+---
+
+# Extension: non-adversarial opponents (Section 4)
+
+This extension keeps the same 2x2 bandit game and the same row-player algorithms (UCB, EXP3, and OurAlg), but replaces the adversarial column player with structured opponents:
+
+- **Uniform stochastic opponent:** samples each column with probability `0.5`.
+- **Nash stochastic opponent:** samples columns from `y* = (1/3, 2/3)`.
+- **Hedge opponent:** uses a full-information Hedge update to learn which column gives the row player lower payoff.
+
+The extension is isolated in:
+
+- `Bandit_feedback/Bandit_Feedback_extension_non_adversarial/`
+
+## Reproduce the extension notebook
+
+```bash
+cd Bandit_feedback/Bandit_Feedback_extension_non_adversarial
+jupyter notebook section4_extension_non_adversarial.ipynb
+```
+
+Run the notebook cells top-to-bottom. For the report plots, use the `paper-lite` preset:
+
+- `plots/section4_non_adversarial_paper-lite.png`
+- `plots/section4_non_adversarial_payoff_paper-lite.png`
+
+The same experiment can also be run from the command line:
+
+```bash
+cd Bandit_feedback/Bandit_Feedback_extension_non_adversarial
+python experiments_section4_extension.py --preset paper-lite
+```
+
+## What the extension measures
+
+The first plot keeps the paper's log-log Nash regret style, so it remains directly comparable to Figure 2. The second plot shows average row payoff over the horizon, which is useful because under non-adversarial opponents Nash regret alone does not tell the whole story.
+
+Uniform and Nash stochastic opponents test whether simple non-adaptive behavior changes the need for an adversarially robust row algorithm. The Hedge opponent is an intermediate case: the column player learns from the row player, but it is still more structured than a pure best-response adversary.
+
+![Section 4 non-adversarial regret](Bandit_feedback/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_paper-lite.png)
+
+The Nash-regret plot shows that all methods have essentially zero regret against the fixed Nash opponent, as expected. Against the Hedge opponent, EXP3 accumulates more regret than UCB and OurAlg, while OurAlg remains the most stable. Against the uniform opponent, regret is not very informative because the row player can get payoff above the game value.
+
+![Section 4 non-adversarial average payoff](Bandit_feedback/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_payoff_paper-lite.png)
+
+The average-payoff plot makes the non-adversarial cases clearer. Under the Nash opponent, all algorithms stay at the game value `V* = 2/9`. Under the uniform opponent, EXP3 and OurAlg exploit the fixed column mixture and obtain payoff above `V*`. Under the Hedge opponent, payoffs stay close to `V*`, which indicates a more balanced interaction than the fixed uniform opponent but a less hostile one than pure best response.
