@@ -126,6 +126,8 @@ The average-payoff plot makes the non-adversarial cases clearer. Under the Nash 
 
 This extension varies the Gaussian feedback noise level `sigma` and compares how regret and average payoff change. Section 3 uses full-information Gaussian matrix feedback, while Section 4 uses Gaussian bandit feedback only at the played cell. The expectation is that Section 3 is more robust because the learner observes much more feedback each round, while Section 4 is more sensitive to noise.
 
+In this extension, we replace the original Bernoulli feedback with Gaussian feedback noise, computed as `A + sigma * N(0,1)` and clipped to `[0,1]`, so that the noise level can be controlled explicitly.
+
 The Section 3 extension is isolated in:
 
 - `Extensions/Extension_Noise_Robustness_Full_info_feedback/`
