@@ -30,7 +30,7 @@ from experiments.section3 import (  # noqa: E402
 
 
 N_VALUES = [10, 20, 50, 100]
-ALGORITHM_ORDER = ["Nash", "Hedge", "Our-Algo"]
+ALGORITHM_ORDER = ["Nash", "Hedge", "Our-Algo", "Our-Algo-NoiseAware"]
 
 
 def preset_config(preset: str) -> tuple[list[float], int, int]:
@@ -140,6 +140,47 @@ def run_our_algo_official_gaussian(
     return _metrics(regret, payoff, horizon)
 
 
+def run_our_algo_noise_aware_gaussian(
+    seed: int,
+    horizon: int,
+    n: int,
+    sigma: float,
+) -> dict[str, float]:
+    rng = np.random.default_rng(seed)
+    A = generate_diagonal_matrix(n)
+    V = _value_of_diag_game(A)
+
+    Abar = np.zeros((n, n), dtype=float)
+    frozen = np.zeros((n, n), dtype=float)
+    jt = 0
+    x = np.ones(n, dtype=float) / n
+    count0 = 1
+    t0 = 1
+    noise_scale = 1.0 + sigma**2
+    threshold = min(noise_scale * math.log(max(horizon, 2)) ** 2, horizon**0.5)
+    regret = 0.0
+    payoff = 0.0
+
+    for t in range(horizon):
+        if count0 > 0 and t > threshold:
+            x = _update_official_diag(frozen, x, jt, t0)
+            count0 -= 1
+        else:
+            t0 = t + 1
+            x = nash1_diag(Abar)
+            count0 = t0 - 1
+            frozen = Abar.copy()
+
+        val, jt = adversary(A, x)
+        # Match the official Section 3 runner's regret accounting.
+        regret += 2.0 * (V - val)
+        payoff += val
+        sample = sample_full_information_gaussian(A, sigma, rng)
+        Abar = (t / (t + 1)) * Abar + (1.0 / (t + 1)) * sample
+
+    return _metrics(regret, payoff, horizon)
+
+
 def run_section3_noise_robustness(
     preset: str,
     seed: int = 7,
@@ -150,6 +191,7 @@ def run_section3_noise_robustness(
         "Nash": run_nash_gaussian,
         "Hedge": run_hedge_gaussian,
         "Our-Algo": run_our_algo_official_gaussian,
+        "Our-Algo-NoiseAware": run_our_algo_noise_aware_gaussian,
     }
     results: dict[int, dict[str, dict[str, list[float]]]] = {}
 
@@ -189,8 +231,8 @@ def plot_section3_noise_regret(
     save_path: str | Path,
 ) -> None:
     fig, axes = plt.subplots(2, 2, figsize=(11, 8), sharex=True, sharey=False)
-    palette = {"Nash": "#1f77b4", "Hedge": "#2ca02c", "Our-Algo": "#ff7f0e"}
-    markers = {"Nash": "o", "Hedge": "s", "Our-Algo": "^"}
+    palette = {"Nash": "#1f77b4", "Hedge": "#2ca02c", "Our-Algo": "#ff7f0e", "Our-Algo-NoiseAware": "#d62728"}
+    markers = {"Nash": "o", "Hedge": "s", "Our-Algo": "^", "Our-Algo-NoiseAware": "D"}
 
     for ax, n in zip(axes.ravel(), N_VALUES):
         for name in ALGORITHM_ORDER:
@@ -223,8 +265,8 @@ def plot_section3_noise_payoff(
     save_path: str | Path,
 ) -> None:
     fig, axes = plt.subplots(2, 2, figsize=(11, 8), sharex=True, sharey=False)
-    palette = {"Nash": "#1f77b4", "Hedge": "#2ca02c", "Our-Algo": "#ff7f0e"}
-    markers = {"Nash": "o", "Hedge": "s", "Our-Algo": "^"}
+    palette = {"Nash": "#1f77b4", "Hedge": "#2ca02c", "Our-Algo": "#ff7f0e", "Our-Algo-NoiseAware": "#d62728"}
+    markers = {"Nash": "o", "Hedge": "s", "Our-Algo": "^", "Our-Algo-NoiseAware": "D"}
 
     for ax, n in zip(axes.ravel(), N_VALUES):
         for name in ALGORITHM_ORDER:
@@ -262,11 +304,11 @@ def print_summary(
     final_sigma = sigma_values[final_idx]
     for n in N_VALUES:
         print(f"\nn={n}, sigma={final_sigma}")
-        print(f"{'Algorithm':>10}  {'NashRegret':>12}  {'AvgPayoff':>10}")
+        print(f"{'Algorithm':>20}  {'NashRegret':>12}  {'AvgPayoff':>10}")
         for name in ALGORITHM_ORDER:
             regret = results[n][name]["regret"][final_idx]
             payoff = results[n][name]["avg_payoff"][final_idx]
-            print(f"{name:>10}  {regret:>12.2f}  {payoff:>10.4f}")
+            print(f"{name:>20}  {regret:>12.2f}  {payoff:>10.4f}")
 
 
 def run_and_plot(preset: str, seed: int = 7) -> tuple[dict[str, Any], Path, Path]:

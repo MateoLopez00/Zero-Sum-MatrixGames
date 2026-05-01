@@ -24,26 +24,21 @@ pip install -r requirements.txt
 
 The four plots below were generated with `Full_information_feedback/experiments_section3.py` using the `paper-lite` preset and the `official` variant for `n_actions = 10, 20, 50, 100`.
 
-<table>
-  <tr>
-    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n10.png" width="100%"></td>
-    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n20.png" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>n = 10</b></td>
-    <td align="center"><b>n = 20</b></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n50.png" width="100%"></td>
-    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n100.png" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>n = 50</b></td>
-    <td align="center"><b>n = 100</b></td>
-  </tr>
-</table>
+At **n=10**, Our-Algo grows much slower than Nash and Hedge.
 
-At `n=10`, Our-Algo grows much slower than Nash and Hedge. The same qualitative behavior holds at `n=20`, where the proposed method has a flatter regret curve than the baselines. At `n=50` and `n=100`, Our-Algo continues to outperform the baselines across horizons, although the gap shrinks as the matrix size grows.
+![Section 3 paper-lite n=10](Full_information_feedback/plots/section3_official_style_paper-lite_n10.png)
+
+At **n=20**, the same qualitative behavior holds: the proposed method has a flatter regret curve than the baselines.
+
+![Section 3 paper-lite n=20](Full_information_feedback/plots/section3_official_style_paper-lite_n20.png)
+
+At **n=50**, the proposed method continues to outperform the baselines across horizons.
+
+![Section 3 paper-lite n=50](Full_information_feedback/plots/section3_official_style_paper-lite_n50.png)
+
+At **n=100**, the gap vs Nash/Hedge is still visible under the same experimental protocol.
+
+![Section 3 paper-lite n=100](Full_information_feedback/plots/section3_official_style_paper-lite_n100.png)
 
 ## Empirical vs theoretical
 
@@ -95,59 +90,57 @@ On log-log axes this means Our-Algo should have a slope that flattens toward `0`
 
 ---
 
-# Extension: non-adversarial opponents (Section 4)
-
-This extension keeps the same 2x2 bandit game and the same row-player algorithms (UCB, EXP3, and OurAlg), but replaces the adversarial column player with structured opponents:
-
-- **Uniform stochastic opponent:** samples each column with probability `0.5`.
-- **Nash stochastic opponent:** samples columns from `y* = (1/3, 2/3)`.
-- **Hedge opponent:** uses a full-information Hedge update to learn which column gives the row player lower payoff.
-
-The extension is isolated in:
-
-- `Extensions/Bandit_Feedback_extension_non_adversarial/`
-
-## Extension results
-
-The plots below were generated with `Extensions/Bandit_Feedback_extension_non_adversarial/section4_extension_non_adversarial.ipynb` using the `paper-lite` preset.
-
-## What the extension measures
-
-The first plot keeps the paper's log-log Nash regret style, so it remains directly comparable to Figure 2. The second plot shows average row payoff over the horizon, which is useful because under non-adversarial opponents Nash regret alone does not tell the whole story.
-
-Uniform and Nash stochastic opponents test whether simple non-adaptive behavior changes the need for an adversarially robust row algorithm. The Hedge opponent is an intermediate case: the column player learns from the row player, but it is still more structured than a pure best-response adversary.
-
-<p align="center"><b>Nash regret</b></p>
-
-![Section 4 non-adversarial regret](Extensions/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_paper-lite.png)
-
-<p align="center"><b>Average payoff</b></p>
-
-![Section 4 non-adversarial average payoff](Extensions/Bandit_Feedback_extension_non_adversarial/plots/section4_non_adversarial_payoff_paper-lite.png)
-
-The Nash-regret plot shows that all methods have essentially zero regret against the fixed Nash opponent, as expected. Against the Hedge opponent, EXP3 accumulates more regret than UCB and OurAlg, while OurAlg remains the most stable. Against the uniform opponent, regret is not very informative because the row player can get payoff above the game value.
-
-The average-payoff plot makes the non-adversarial cases clearer. Under the Nash opponent, all algorithms stay at the game value `V* = 2/9`. Under the uniform opponent, EXP3 and OurAlg exploit the fixed column mixture and obtain payoff above `V*`. Under the Hedge opponent, payoffs stay close to `V*`, which indicates a more balanced interaction than the fixed uniform opponent but a less hostile one than pure best response.
-
----
-
 # Extension: Noise Robustness
 
-This extension varies the Gaussian feedback noise level `sigma` and compares how regret and average payoff change. Section 3 uses full-information Gaussian matrix feedback, while Section 4 uses Gaussian bandit feedback only at the played cell. The expectation is that Section 3 is more robust because the learner observes much more feedback each round, while Section 4 is more sensitive to noise.
+## Motivation
 
-In this extension, we replace the original Bernoulli feedback with Gaussian feedback noise, computed as `A + sigma * N(0,1)` and clipped to `[0,1]`, so that the noise level can be controlled explicitly.
+The original reproduction studies the paper's algorithms under the paper's feedback models. This extension asks a complementary question: if the feedback becomes noisier, can the proposed method be made explicitly noise-aware?
 
-The Section 3 extension is isolated in:
+The experiment varies a Gaussian noise parameter `sigma` and measures both total Nash regret and average row payoff. The noisy feedback is generated as `clip(A + sigma * N(0,1), 0, 1)`. Section 3 uses full-information feedback, so the learner observes a full noisy matrix signal each round. Section 4 uses bandit feedback, so the learner observes only the noisy reward at the played cell.
+
+The extension is implemented in:
 
 - `Extensions/Extension_Noise_Robustness_Full_info_feedback/`
-
-The Section 4 extension is isolated in:
-
 - `Extensions/Extension_Noise_Robustness_Bandit_feedback/`
 
-## Noise robustness results
+The plots below were generated from:
 
-The Section 3 plots below were generated with `Extensions/Extension_Noise_Robustness_Full_info_feedback/section3_noise_robustness.ipynb` using the `medium` preset. The Section 4 plots were generated with `Extensions/Extension_Noise_Robustness_Bandit_feedback/section4_noise_robustness.ipynb` using the `paper-lite` preset.
+- `Extensions/Extension_Noise_Robustness_Full_info_feedback/section3_noise_robustness.ipynb` with the `medium` preset.
+- `Extensions/Extension_Noise_Robustness_Bandit_feedback/section4_noise_robustness.ipynb` with the `paper-lite` preset.
+
+## Algorithmic change
+
+The baselines are kept unchanged. The extension only modifies the paper's proposed algorithm, adding a second variant that is compared directly against the original method.
+
+In Section 3, the original Our-Algo uses the update threshold:
+
+```python
+threshold = min(log(T)**2, sqrt(T))
+```
+
+The noise-aware version uses:
+
+```python
+threshold = min((1 + sigma**2) * log(T)**2, sqrt(T))
+```
+
+The intuition is that, under noisier full-information feedback, the algorithm should wait slightly longer before trusting the empirical matrix estimate.
+
+In Section 4, the original bandit algorithm uses the confidence radius:
+
+```python
+devs = sqrt(log_c / (count + 1))
+```
+
+The noise-aware version uses:
+
+```python
+devs = (1 + sigma**2) * sqrt(log_c / (count + 1))
+```
+
+Here the idea is to widen the confidence radius mildly when feedback noise increases. The factor uses `sigma**2` rather than `sigma` because Gaussian noise variance scales with `sigma**2`; this keeps the modification conservative and avoids over-widening the confidence set.
+
+## Section 3 results
 
 <table>
   <tr>
@@ -160,9 +153,16 @@ The Section 3 plots below were generated with `Extensions/Extension_Noise_Robust
   </tr>
 </table>
 
-For Section 3, increasing `sigma` mostly affects the baselines. The Nash baseline becomes noticeably worse as noise increases, especially for smaller games such as `n=10` and `n=20`. Hedge also degrades with noise, while Our-Algo remains comparatively stable across the tested noise levels.
+For Section 3, the noise-aware variant improves the original Our-Algo consistently at the highest tested noise level, `sigma = 0.3`:
 
-The average-payoff plot shows the same pattern in a less amplified scale. Payoffs decrease mildly as noise increases, but they do not collapse. This supports the expected behavior: full-information feedback is relatively robust because the learner receives a complete noisy matrix signal each round.
+- `n = 10`: regret improves from `5.96` to `5.84`.
+- `n = 20`: regret improves from `4.91` to `4.82`.
+- `n = 50`: regret improves from `4.07` to `4.02`.
+- `n = 100`: regret improves from `3.85` to `3.82`.
+
+The improvement is numerically small, but it appears consistently across all tested matrix sizes. This supports the interpretation that, in the full-information setting, slightly delaying updates under higher noise makes the empirical matrix estimates more reliable. The average-payoff plot is less sensitive because payoffs stay close to the game value, but it shows that the noise-aware change does not damage payoff performance.
+
+## Section 4 results
 
 <p align="center"><b>Section 4: Nash regret vs noise</b></p>
 
@@ -172,6 +172,19 @@ The average-payoff plot shows the same pattern in a less amplified scale. Payoff
 
 ![Section 4 noise payoff](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_noise_payoff_paper-lite.png)
 
-For Section 4, the effect of noise is stronger. Against Adversaries 1 and 2, regret generally increases with `sigma`, especially for EXP3 and OurAlg. Against Adversary 3, UCB and EXP3 become much worse as noise increases, while OurAlg remains close to flat.
+For Section 4, the same noise-aware idea does not improve the original OurAlg overall. At `sigma = 0.3`, the comparison is:
 
-The average-payoff plot confirms that bandit feedback is more sensitive to noise. UCB and EXP3 lose payoff under high noise, most clearly against Adversary 3. OurAlg stays close to the game value `V* = 2/9`, which matches the paper's claim that the proposed bandit algorithm is more stable under difficult feedback conditions.
+- **Adversary 1:** original OurAlg has regret `77.90`, while OurAlg-NoiseAware has regret `84.64`.
+- **Adversary 2:** original OurAlg has regret `86.07`, while OurAlg-NoiseAware has regret `92.29`.
+- **Adversary 3:** both versions are essentially identical, with regret `2.86`.
+
+This is still informative. In the bandit setting, the original algorithm already contains uncertainty handling through optimistic estimates and confidence radii. Increasing the radius further makes the algorithm slightly too conservative against Adversaries 1 and 2, where it needs to react accurately to best-response-style behavior. Against Adversary 3, both versions remain very stable and stay close to the game value `V* = 2/9`.
+
+## Extension conclusion
+
+The extension shows two different outcomes from the same noise-aware idea:
+
+- In Section 3, noise-aware adaptation improves the proposed method consistently under high Gaussian feedback noise.
+- In Section 4, the original proposed method is already robust to bandit uncertainty, and additional confidence widening does not improve it.
+
+This suggests that noise-aware tuning is useful in the full-information setting, while the bandit algorithm from the paper is already carefully calibrated for uncertainty.
