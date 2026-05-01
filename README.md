@@ -24,21 +24,26 @@ pip install -r requirements.txt
 
 The four plots below were generated with `Full_information_feedback/experiments_section3.py` using the `paper-lite` preset and the `official` variant for `n_actions = 10, 20, 50, 100`.
 
-At **n=10**, Our-Algo grows much slower than Nash and Hedge.
+<table>
+  <tr>
+    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n10.png" width="100%"></td>
+    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n20.png" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>n = 10</b></td>
+    <td align="center"><b>n = 20</b></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n50.png" width="100%"></td>
+    <td width="50%"><img src="Full_information_feedback/plots/section3_official_style_paper-lite_n100.png" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>n = 50</b></td>
+    <td align="center"><b>n = 100</b></td>
+  </tr>
+</table>
 
-![Section 3 paper-lite n=10](Full_information_feedback/plots/section3_official_style_paper-lite_n10.png)
-
-At **n=20**, the same qualitative behavior holds: the proposed method has a flatter regret curve than the baselines.
-
-![Section 3 paper-lite n=20](Full_information_feedback/plots/section3_official_style_paper-lite_n20.png)
-
-At **n=50**, the proposed method continues to outperform the baselines across horizons.
-
-![Section 3 paper-lite n=50](Full_information_feedback/plots/section3_official_style_paper-lite_n50.png)
-
-At **n=100**, the gap vs Nash/Hedge is still visible under the same experimental protocol.
-
-![Section 3 paper-lite n=100](Full_information_feedback/plots/section3_official_style_paper-lite_n100.png)
+At `n=10`, Our-Algo grows much slower than Nash and Hedge. The same qualitative behavior holds at `n=20`, where the proposed method has a flatter regret curve than the baselines. At `n=50` and `n=100`, Our-Algo continues to outperform the baselines across horizons, although the gap shrinks as the matrix size grows.
 
 ## Empirical vs theoretical
 
