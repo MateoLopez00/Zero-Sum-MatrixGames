@@ -156,7 +156,7 @@ def run_our_algo_noise_aware_gaussian(
     x = np.ones(n, dtype=float) / n
     count0 = 1
     t0 = 1
-    noise_scale = 1.0 + sigma**2
+    noise_scale = 1.0 + 2.0 * sigma
     threshold = min(noise_scale * math.log(max(horizon, 2)) ** 2, horizon**0.5)
     regret = 0.0
     payoff = 0.0
@@ -179,6 +179,131 @@ def run_our_algo_noise_aware_gaussian(
         Abar = (t / (t + 1)) * Abar + (1.0 / (t + 1)) * sample
 
     return _metrics(regret, payoff, horizon)
+
+
+def _checkpoint_times(horizon: int, n_points: int = 250) -> np.ndarray:
+    return np.unique(np.rint(np.linspace(1, horizon, n_points)).astype(int))
+
+
+def _run_section3_convergence_path(
+    name: str,
+    seed: int,
+    horizon: int,
+    n: int,
+    sigma: float,
+    checkpoints: np.ndarray,
+) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    A = generate_diagonal_matrix(n)
+    V = _value_of_diag_game(A)
+    regret = 0.0
+    path = np.zeros(len(checkpoints), dtype=float)
+    checkpoint_idx = 0
+
+    if name == "Nash":
+        Abar = np.zeros((n, n), dtype=float)
+        for t in range(horizon):
+            x = nash1_diag(Abar)
+            val, _ = adversary(A, x)
+            regret += V - val
+            sample = sample_full_information_gaussian(A, sigma, rng)
+            Abar = (t / (t + 1)) * Abar + (1.0 / (t + 1)) * sample
+            if t + 1 == checkpoints[checkpoint_idx]:
+                path[checkpoint_idx] = regret
+                checkpoint_idx += 1
+                if checkpoint_idx == len(checkpoints):
+                    break
+        return path
+
+    if name == "Hedge":
+        weights = np.ones(n, dtype=float)
+        eta = math.sqrt(math.log(n) / max(1, horizon))
+        for t in range(horizon):
+            x = weights / np.sum(weights)
+            val, idx = adversary(A, x)
+            regret += V - val
+            sample = sample_full_information_gaussian(A, sigma, rng)
+            reward_vector = sample[:, idx]
+            weights *= np.exp(eta * reward_vector)
+            if t + 1 == checkpoints[checkpoint_idx]:
+                path[checkpoint_idx] = regret
+                checkpoint_idx += 1
+                if checkpoint_idx == len(checkpoints):
+                    break
+        return path
+
+    if name in {"Our-Algo", "Our-Algo-NoiseAware"}:
+        Abar = np.zeros((n, n), dtype=float)
+        frozen = np.zeros((n, n), dtype=float)
+        jt = 0
+        x = np.ones(n, dtype=float) / n
+        count0 = 1
+        t0 = 1
+        noise_scale = 1.0 + 2.0 * sigma if name == "Our-Algo-NoiseAware" else 1.0
+        threshold = min(noise_scale * math.log(max(horizon, 2)) ** 2, horizon**0.5)
+
+        for t in range(horizon):
+            if count0 > 0 and t > threshold:
+                x = _update_official_diag(frozen, x, jt, t0)
+                count0 -= 1
+            else:
+                t0 = t + 1
+                x = nash1_diag(Abar)
+                count0 = t0 - 1
+                frozen = Abar.copy()
+
+            val, jt = adversary(A, x)
+            regret += 2.0 * (V - val)
+            sample = sample_full_information_gaussian(A, sigma, rng)
+            Abar = (t / (t + 1)) * Abar + (1.0 / (t + 1)) * sample
+            if t + 1 == checkpoints[checkpoint_idx]:
+                path[checkpoint_idx] = regret
+                checkpoint_idx += 1
+                if checkpoint_idx == len(checkpoints):
+                    break
+        return path
+
+    raise ValueError(f"Unknown algorithm: {name}")
+
+
+def run_section3_convergence(
+    preset: str = "medium",
+    n: int = 20,
+    sigma: float = 0.3,
+    seed: int = 7,
+    n_points: int = 250,
+    verbose: bool = True,
+) -> tuple[dict[str, dict[str, list[float]]], dict[str, Any]]:
+    _, n_runs, horizon = preset_config(preset)
+    checkpoints = _checkpoint_times(horizon, n_points=n_points)
+    results: dict[str, dict[str, list[float]]] = {}
+
+    if verbose:
+        print("\nSection 3 convergence")
+        print(f"n={n}, sigma={sigma}, T={horizon}, n_runs={n_runs}")
+
+    for name in ALGORITHM_ORDER:
+        paths = []
+        for run_idx in range(n_runs):
+            run_seed = seed + 10007 * run_idx + 7919 * n + int(1000 * sigma)
+            paths.append(_run_section3_convergence_path(name, run_seed, horizon, n, sigma, checkpoints))
+        stacked = np.vstack(paths)
+        results[name] = {
+            "mean": stacked.mean(axis=0).tolist(),
+            "std": stacked.std(axis=0).tolist(),
+        }
+        if verbose:
+            print(f"{name}: final R={stacked[:, -1].mean():.2f}")
+
+    metadata = {
+        "preset": preset,
+        "n": n,
+        "sigma": sigma,
+        "n_runs": n_runs,
+        "horizon": horizon,
+        "checkpoints": checkpoints.tolist(),
+    }
+    return results, metadata
 
 
 def run_section3_noise_robustness(
@@ -223,6 +348,36 @@ def run_section3_noise_robustness(
                 print()
 
     return results, sigma_values, n_runs, horizon
+
+
+def plot_section3_convergence(
+    results: dict[str, dict[str, list[float]]],
+    metadata: dict[str, Any],
+    save_path: str | Path,
+) -> None:
+    checkpoints = np.asarray(metadata["checkpoints"], dtype=float)
+    palette = {"Nash": "#1f77b4", "Hedge": "#2ca02c", "Our-Algo": "#ff7f0e", "Our-Algo-NoiseAware": "#d62728"}
+
+    fig, ax = plt.subplots(figsize=(9, 5.2))
+    for name in ALGORITHM_ORDER:
+        mean = np.asarray(results[name]["mean"], dtype=float)
+        std = np.asarray(results[name]["std"], dtype=float)
+        ax.plot(checkpoints, np.maximum(mean, 1e-12), color=palette[name], linewidth=1.9, label=name)
+        lower = np.maximum(mean - std, 1e-12)
+        upper = np.maximum(mean + std, 1e-12)
+        ax.fill_between(checkpoints, lower, upper, color=palette[name], alpha=0.12)
+
+    ax.set_yscale("log")
+    ax.set_xlabel("time step")
+    ax.set_ylabel("cumulative Nash regret")
+    ax.set_title(f"Section 3 convergence: n={metadata['n']}, sigma={metadata['sigma']}")
+    ax.grid(True, alpha=0.25, which="both")
+    ax.legend(fontsize=9)
+    plt.tight_layout()
+    Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(save_path, dpi=160, bbox_inches="tight")
+    print(f"Figure saved -> {save_path}")
+    plt.close(fig)
 
 
 def plot_section3_noise_regret(
@@ -294,6 +449,44 @@ def plot_section3_noise_payoff(
     plt.close(fig)
 
 
+def plot_section3_noiseaware_improvement(
+    results: dict[int, dict[str, dict[str, list[float]]]],
+    sigma_values: list[float],
+    save_path: str | Path,
+    sigma: float = 0.3,
+) -> None:
+    sigma_arr = np.asarray(sigma_values, dtype=float)
+    sigma_idx = int(np.argmin(np.abs(sigma_arr - sigma)))
+    selected_sigma = float(sigma_arr[sigma_idx])
+
+    improvements = []
+    for n in N_VALUES:
+        original = float(results[n]["Our-Algo"]["regret"][sigma_idx])
+        noise_aware = float(results[n]["Our-Algo-NoiseAware"]["regret"][sigma_idx])
+        improvement = 100.0 * (original - noise_aware) / max(original, 1e-12)
+        improvements.append(improvement)
+
+    fig, ax = plt.subplots(figsize=(8, 4.8))
+    bars = ax.bar([str(n) for n in N_VALUES], improvements, color="#d62728", alpha=0.85)
+    ax.axhline(0.0, color="black", linewidth=0.9)
+    ax.set_xlabel("number of actions n")
+    ax.set_ylabel("regret reduction vs Our-Algo (%)")
+    ax.set_title(f"Section 3: Noise-aware improvement at sigma={selected_sigma}")
+    ax.grid(True, axis="y", alpha=0.25)
+
+    for bar, value in zip(bars, improvements):
+        y = bar.get_height()
+        va = "bottom" if y >= 0 else "top"
+        offset = 0.15 if y >= 0 else -0.15
+        ax.text(bar.get_x() + bar.get_width() / 2, y + offset, f"{value:.1f}%", ha="center", va=va, fontsize=9)
+
+    plt.tight_layout()
+    Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(save_path, dpi=160, bbox_inches="tight")
+    print(f"Figure saved -> {save_path}")
+    plt.close(fig)
+
+
 def print_summary(
     results: dict[int, dict[str, dict[str, list[float]]]],
     sigma_values: list[float],
@@ -322,6 +515,20 @@ def run_and_plot(preset: str, seed: int = 7) -> tuple[dict[str, Any], Path, Path
     print_summary(results, sigma_values)
     metadata = {"preset": preset, "sigma_values": sigma_values, "n_runs": n_runs, "horizon": horizon}
     return {"results": results, "metadata": metadata}, regret_path, payoff_path
+
+
+def run_convergence_and_plot(
+    preset: str = "medium",
+    seed: int = 7,
+    n: int = 20,
+    sigma: float = 0.3,
+) -> tuple[dict[str, Any], Path]:
+    results, metadata = run_section3_convergence(preset=preset, n=n, sigma=sigma, seed=seed, verbose=True)
+    here = Path(__file__).resolve().parent
+    plots_dir = here / "plots"
+    convergence_path = plots_dir / f"section3_convergence_{preset}_n{n}_sigma{str(sigma).replace('.', 'p')}.png"
+    plot_section3_convergence(results, metadata, convergence_path)
+    return {"results": results, "metadata": metadata}, convergence_path
 
 
 def parse_args() -> argparse.Namespace:
