@@ -12,7 +12,6 @@ from scipy.optimize import linprog
 
 from core.utils import ensure_dir
 
-
 @dataclass
 class RunConfig:
     horizons: list[int]
@@ -34,25 +33,21 @@ def section3_horizons_for_preset(preset: str) -> tuple[list[int], int]:
         return [10**i for i in range(1, 8)], 100
     raise ValueError(f"Unknown preset: {preset}")
 
-
 def nash1_diag(A: np.ndarray) -> np.ndarray:
     A = np.maximum(A, 1e-6)
     den = np.sum(1.0 / np.diag(A))
     return 1.0 / (np.diag(A) * den)
-
 
 def adversary(A: np.ndarray, x: np.ndarray) -> tuple[float, int]:
     column_sums = A @ x
     idx = int(np.argmin(column_sums))
     return float(column_sums[idx]), idx
 
-
 def generate_diagonal_matrix(n: int) -> np.ndarray:
     B = np.zeros((n, n), dtype=float)
     for i in range(n):
         B[i, i] = 0.4 + 0.2 * i / (n - 1)
     return B
-
 
 def generate_bernoulli_diagonal_matrix(
     A: np.ndarray, rng: np.random.Generator
@@ -63,13 +58,11 @@ def generate_bernoulli_diagonal_matrix(
         B[i, i] = rng.binomial(1, A[i, i])
     return B
 
-
 def _value_of_diag_game(A: np.ndarray) -> float:
     den = 0.0
     for i in range(A.shape[0]):
         den += 1.0 / A[i, i]
     return 1.0 / den
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Original Algo Just Row
@@ -402,11 +395,37 @@ def run_match(
         x = row_player.get_strategy()
         y = col_player.get_strategy()
         val = float(x @ A @ y)
-        reg += V - val
+        reg += abs(V - val)
         A_sample = generate_bernoulli_diagonal_matrix(A, rng)
         row_player.update(A_sample, y)
         col_player.update(A_sample, x)
-    return float(max(reg, 1e-12))
+    return float(reg)
+
+
+def run_match_curve(
+    row_player: Player,
+    col_player: Player,
+    seed: int,
+    horizon: int,
+    n: int,
+) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    A = generate_diagonal_matrix(n)
+    V = _value_of_diag_game(A)
+    row_player.reset()
+    col_player.reset()
+    regrets = np.zeros(horizon, dtype=float)
+    reg = 0.0
+    for t in range(horizon):
+        x = row_player.get_strategy()
+        y = col_player.get_strategy()
+        val = float(x @ A @ y)
+        reg += abs(V - val)
+        regrets[t] = reg
+        A_sample = generate_bernoulli_diagonal_matrix(A, rng)
+        row_player.update(A_sample, y)
+        col_player.update(A_sample, x)
+    return regrets
 
 
 def run_our_vs_our(seed: int, horizon: int, n: int) -> float:
@@ -441,7 +460,7 @@ def run_our_vs_nash(seed: int, horizon: int, n: int) -> float:
 
 def run(config: RunConfig) -> None:
     ensure_dir("plots_bilateral")
-    x_axis = np.log10(np.asarray(config.horizons, dtype=float))
+    horizons_axis = np.asarray(config.horizons, dtype=float)
 
     # Algoritmos originales (adversario best-response)
     original_specs = [
@@ -451,21 +470,17 @@ def run(config: RunConfig) -> None:
     ]
 
     # Algoritmos bilaterales (ambos jugadores aprenden)
-    bilateral_specs = [
-        ("Our vs Our",     run_our_vs_our,     "#9467bd"),
-        ("Hedge vs Hedge", run_hedge_vs_hedge, "#8c564b"),
-        ("Our vs Hedge",   run_our_vs_hedge,   "#e377c2"),
-        ("Nash vs Nash",   run_nash_vs_nash,   "#7f7f7f"),
-        ("Our vs Nash",    run_our_vs_nash,    "#bcbd22"),
-    ]  
-
-    # all_specs = original_specs + bilateral_specs
-    # Solo Our vs Our
-    all_specs = [("Our vs Our",     run_our_vs_our,     "#9467bd")]
+    bilateral_player_specs = [
+        ("Our vs Our",     lambda n, T: (OurRowPlayer(n, T), OurColumnPlayer(n, T)), "#9467bd"),
+        ("Hedge vs Hedge", lambda n, T: (HedgeRowPlayer(n, T), HedgeColumnPlayer(n, T)), "#8c564b"),
+        ("Our vs Hedge",   lambda n, T: (OurRowPlayer(n, T), HedgeColumnPlayer(n, T)), "#e377c2"),
+        ("Nash vs Nash",   lambda n, T: (NashRowPlayer(n), NashColumnPlayer(n)), "#7f7f7f"),
+        ("Our vs Nash",    lambda n, T: (OurRowPlayer(n, T), NashColumnPlayer(n)), "#bcbd22"),
+    ]
 
     fig, ax = plt.subplots(figsize=(9, 5))
 
-    for label, fn, color in all_specs:
+    for label, fn, color in original_specs:
         means: list[float] = []
         stds: list[float] = []
         for T in config.horizons:
@@ -479,34 +494,46 @@ def run(config: RunConfig) -> None:
 
         y  = np.asarray(means, dtype=float)
         ci = np.asarray(stds,  dtype=float)
-        ls = "--" if "adv" in label else "-"
-        ax.plot(x_axis, y, marker="o", label=label, color=color, linestyle=ls)
-        ax.fill_between(x_axis, y - ci, y + ci, alpha=0.15, color=color)
+        ax.plot(horizons_axis, y, marker="o", label=label, color=color, linestyle="--")
+        ax.fill_between(horizons_axis, y - ci, y + ci, alpha=0.15, color=color)
+
+    T_max = max(config.horizons)
+    curve_axis = np.arange(1, T_max + 1)
+
+    for label, make_players, color in bilateral_player_specs:
+        mean_curve = np.zeros(T_max, dtype=float)
+        for r in range(config.n_runs):
+            seed = config.seed + 10007 * r
+            row_player, col_player = make_players(config.n_actions, T_max)
+            mean_curve += run_match_curve(
+                row_player, col_player, seed, T_max, config.n_actions
+            )
+        mean_curve /= max(1, config.n_runs)
+        log_curve = np.log10(np.maximum(mean_curve, 1e-12))
+        ax.plot(curve_axis, log_curve, label=label, color=color, linestyle="-")
 
     ax.set_xscale("linear")
-    ax.set_xlabel("Log of Time Step")
+    ax.set_xlabel("Time Horizon T")
     ax.set_ylabel("Log of Nash Regret (row player)")
-    xmin, xmax = float(np.min(x_axis)), float(np.max(x_axis))
-    ax.set_xlim(max(0.5, xmin - 0.25), min(7.5, xmax + 0.25))
-    ax.set_xticks(np.arange(int(np.floor(xmin)), int(np.ceil(xmax)) + 1))
+    ax.set_xlim(1, T_max)
     ax.set_ylim(None, None)  # Automatic scaling
     ax.yaxis.set_major_locator(MultipleLocator(0.2))
     ax.grid(True, which="both", ls=":")
     ax.legend(loc="upper left", fontsize=8, ncol=2)
-    # ax.set_title(
-    #     f"{config.n_actions}×{config.n_actions} diagonal matrix — "
-    #     f"original (--) vs bilateral (—)"
-    # )
     ax.set_title(
-        f"{config.n_actions}×{config.n_actions} diagonal matrix — Our vs Our"
+         f"{config.n_actions}×{config.n_actions} diagonal matrix — "
+         f"original (--) vs bilateral (—)"
     )
+    #ax.set_title(
+    #    f"{config.n_actions}×{config.n_actions} diagonal matrix — Our vs Our"
+    #)
     plt.tight_layout()
     # plt.savefig(
     #     f"plots/section3_bilateral_{config.preset}_n{config.n_actions}.png",
     #     dpi=170,
     # )
     plt.savefig(
-        f"plots/section3_our_vs_our_{config.preset}_n{config.n_actions}.png",
+        f"plots_bilateral/section3_bilateral_{config.preset}_n{config.n_actions}.png",
         dpi=170,
     )
     plt.show()
