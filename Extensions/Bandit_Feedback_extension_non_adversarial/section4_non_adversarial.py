@@ -21,9 +21,10 @@ import matplotlib.ticker as plticker
 import numpy as np
 
 
-PARENT_DIR = Path(__file__).resolve().parents[1]
-if str(PARENT_DIR) not in sys.path:
-    sys.path.insert(0, str(PARENT_DIR))
+REPO_ROOT = Path(__file__).resolve().parents[2]
+BANDIT_DIR = REPO_ROOT / "Bandit_feedback"
+if str(BANDIT_DIR) not in sys.path:
+    sys.path.insert(0, str(BANDIT_DIR))
 
 from section4_bandit import (  # noqa: E402
     A_GAME,

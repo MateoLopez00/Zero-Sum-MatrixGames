@@ -8,7 +8,12 @@ plots/
 !Full_information_feedback/plots/
 !Full_information_feedback/plots/*.png
 
-# Keep Section 4 extension documentation figures under version control
-!Bandit_feedback/Bandit_Feedback_extension_non_adversarial/plots/
-!Bandit_feedback/Bandit_Feedback_extension_non_adversarial/plots/*.png
+# Keep extension documentation figures under version control
+!Extensions/**/plots/
+!Extensions/**/plots/*.png
+# README extension section (Noise Robustness) — explicit per-folder un-ignore
+!Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/
+!Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/*.png
+!Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/
+!Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/*.png
 
