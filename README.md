@@ -127,13 +127,19 @@ compared to the original `threshold = min(log(T)**2, sqrt(T))`.
 
 ### Convergence (`n = 100`)
 
-Cumulative Nash regret vs time for four algorithms; **Our-Algo-NoiseAware** tracks below **Our-Algo** at high noise, with the gap most visible at **`n = 100`** (last row above).
+Each plot shows **cumulative Nash regret** (log scale) vs time for Nash, Hedge, Our-Algo, and Our-Algo-NoiseAware under **diagonal full-information Gaussian noise** at fixed \(\sigma\). **Assumption:** behavior is averaged over repeated runs (shaded bands); curves should be read as typical paths under that noise model.
 
 ![Section 3 convergence sigma=0.1](Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p1.png)
 
+**What we see:** At **low** \(\sigma\), noise-aware and original Our-Algo stay close and both beat Nash/Hedge by the end. **Why:** feedback is still fairly informative, so the extra exploration delay from the noise-aware threshold buys little; baselines suffer mainly from fixed exploration schedules relative to Our-Algo’s structure.
+
 ![Section 3 convergence sigma=0.2](Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p2.png)
 
+**What we see:** At **moderate** \(\sigma\), Hedge regret pulls away upward; the two Our-Algo curves separate slightly. **Why:** noisier empirical matrices hurt Hedge more; the noise-aware variant waits longer before committing to updates based on \(\widehat{A}\), which dampens premature switches driven by sampling error.
+
 ![Section 3 convergence sigma=0.3](Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p3.png)
+
+**What we see:** At **high** \(\sigma\), Hedge ends highest, Nash is poor, and **Our-Algo-NoiseAware** finishes **below** Our-Algo. **Why:** under heavy noise, trusting the empirical matrix too early is costly; scaling the delay with \(\sigma\) reduces regret from bad updates—consistent with the largest relative improvement at **`n = 100`** in the table above.
 
 ## Section 4 — bandit noise (UCB, EXP3, OurAlg)
 
@@ -149,15 +155,19 @@ We compare only the **original** bandit **OurAlg** from the paper with **UCB** a
 
 ### Convergence
 
-Three adversaries per figure (panels); one plot file per noise level.
+Each figure has **three panels** (Adversaries 1–3): **UCB** (blue), **EXP3** (green), **OurAlg** (orange). **Setup:** same two-phase protocol as the base Section 4 experiment—Phase 1 adversary-specific, Phase 2 pure best-response—so a **jump near `T / 2`** is expected when the column rule changes. **Assumption:** Gaussian noise only on the **observed** bandit reward; regret is Nash regret vs the game value.
 
 ![Section 4 convergence sigma=0.1](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p1.png)
 
+**What we see:** Mild noise: curves are smoother; ordering across algorithms **depends on the adversary** (UCB can be competitive where exploration aligns with the phase structure). **Why:** low \(\sigma\) keeps payoff estimates usable; differences are driven mainly by **adversary rules**, not noise drowning the signal.
+
 ![Section 4 convergence sigma=0.2](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p2.png)
+
+**What we see:** Moderate noise: cumulative regret shifts upward overall; gaps between methods widen on harder adversaries. **Why:** optimistic indices and exploration rates interact with **noisy cell observations**—mistakes persist in the statistics UCB/EXP3 rely on.
 
 ![Section 4 convergence sigma=0.3](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p3.png)
 
-On Adversary 3, regret jumps near **`T / 2`** when the column player switches phase (same protocol as the base Section 4 experiment); OurAlg remains comparatively stable after the switch.
+**What we see:** Strong noise: on **Adversary 3**, UCB and EXP3 spike to very large regret after the phase change, while **OurAlg** stays low (flat early, then a modest rise). **Why:** Adversary 3’s Phase 1 is comparatively benign; after **`T / 2`** the column becomes more punitive—generic bandit algorithms built for stochastic or unstructured noise **mis-track** the shift under noisy samples, whereas OurAlg’s update matches the paper’s adversarial bandit design and concentrates regret growth much more slowly here.
 
 ## Extension conclusion
 
