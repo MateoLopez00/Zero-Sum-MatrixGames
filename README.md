@@ -147,7 +147,7 @@ Each plot shows **log(total Nash regret)** vs **time horizon `T`** on **linear `
   </tr>
 </table>
 
-When **both** sides learn, regret curves need not align with the **column-BR** baseline: the game is no longer “row vs best-response”; Nash regret compares play to the **true** diagonal matrix value \(V^*\) while strategies drift on both sides. **Our vs Our** (purple) and **Hedge vs Hedge** (brown) illustrate purely bilateral dynamics; **Our vs Nash** / **Our vs Hedge** mixes paper-style row updates with a learning or Nash-type column.
+When **both** sides learn, regret curves need not align with the **column-BR** baseline: the game is no longer “row vs best-response”; Nash regret compares play to the **true** diagonal matrix value $V^*$ while strategies drift on both sides. **Our vs Our** (purple) and **Hedge vs Hedge** (brown) illustrate purely bilateral dynamics; **Our vs Nash** / **Our vs Hedge** mixes paper-style row updates with a learning or Nash-type column.
 
 ### Our-Algo vs Our-Algo only (`paper-lite`)
 
@@ -190,7 +190,7 @@ Figures are saved under `plots_bilateral_bandit/` as `section4_bilateral_<preset
 
 ### Figures
 
-Each figure overlays **dashed** lines (UCB / EXP3 / OurAlg each vs the **hardest** of the three scripted adversaries—matching `section4_bandit.py`) and **solid** lines for **bilateral** pairs (e.g. OurAlg vs OurAlg). The title reports the game \(A = [[2/3,0],[0,1/3]]\) and number of random seeds.
+Each figure overlays **dashed** lines (UCB / EXP3 / OurAlg each vs the **hardest** of the three scripted adversaries—matching `section4_bandit.py`) and **solid** lines for **bilateral** pairs (e.g. OurAlg vs OurAlg). The title reports the game **A** = [[2/3,0],[0,1/3]] and the number of random seeds.
 
 <table>
   <tr>
@@ -206,7 +206,7 @@ Each figure overlays **dashed** lines (UCB / EXP3 / OurAlg each vs the **hardest
 ## Extension conclusion (bilateral)
 
 - **Section 3:** Compares **paper-style row-vs-best-response** regret (dashed) to **fully bilateral** diagonal-game learning (solid), including symmetric **Our vs Our** and mixed bilateral pairs.
-- **Section 4:** Compares **adversarial-column** bandit regret (dashed, worst adversary) to **bilateral bandit** learning curves (solid) on the same \(2\times2\) game as Section 4 of the README.
+- **Section 4:** Compares **adversarial-column** bandit regret (dashed, worst adversary) to **bilateral bandit** learning curves (solid) on the same $2\times 2$ game as Section 4 of the README.
 
 ---
 
@@ -263,7 +263,7 @@ As σ increases, Nash and especially Hedge deteriorate because they rely on nois
 **Relationship to the Section 4 reproduction (Figure 2, earlier in this README):**
 
 - **Same game:** the `2×2` matrix `A`, Nash value `V*`, and **two phases of `T/2` rounds** each (Phase 1: adversary-specific column play; Phase 2: **pure best-response** for every adversary type—so a **jump near `T / 2`** is structural, not an artifact of the extension).
-- **Same three adversaries:** they are the **same column-player rules** as in **`Bandit_feedback/section4_bandit.py`**—implemented via the same **`advnew_batch` / `adv22gd_batch`** logic as the baseline runs (**Adversary 1** threshold best-response, **Adversary 2** tolerance band, **Adversary 3** fixed Nash mix \((1/3, 2/3)\) in Phase 1). The extension lives in `Extensions/Extension_Noise_Robustness_Bandit_feedback/` but **imports that module**; we do **not** introduce new opponents.
+- **Same three adversaries:** they are the **same column-player rules** as in **`Bandit_feedback/section4_bandit.py`**—implemented via the same **`advnew_batch` / `adv22gd_batch`** logic as the baseline runs (**Adversary 1** threshold best-response, **Adversary 2** tolerance band, **Adversary 3** fixed Nash mix $(1/3,\,2/3)$ in Phase 1). The extension lives in `Extensions/Extension_Noise_Robustness_Bandit_feedback/` but **imports that module**; we do **not** introduce new opponents.
 - **Only the observation model changes:** in the reproduction above, each round observes a **Bernoulli** outcome at the played cell (probability `A[i,j]`). Here we observe **`clip(A[i,j] + sigma * N(0,1), 0, 1)`** at the played cell (Gaussian noise, then clip). Because feedback is noisier and biased when clipped, **regret curves need not match Figure 2** in ordering or magnitude; differences are **expected** and do **not** contradict the noiseless experiment—they answer a different question (“what if bandit feedback is Gaussian-noisy?”).
 
 We compare **UCB**, **EXP3**, and **OurAlg** only. With noisy observations, ranking across algorithms **varies with σ and adversary**; in our **`medium`** runs, **OurAlg** stays far below UCB/EXP3 **on Adversary 3** at high σ when UCB/EXP3 spike after the phase switch.
@@ -303,17 +303,17 @@ At **low σ**, curves are relatively smooth and algorithm ranking **depends on t
 
 # Extension: Bandit Nash regret beyond 2×2
 
-The paper proves **polylogarithmic Nash regret** for **2×2** bandit games (Theorem 6) and leaves **general \(n \times m\)** games as an **open problem** (Section 5). This extension **verbatim-ports** the authors’ reference Algorithm 6 (`ouralgo`-style loop: same two phases, same `update`/`UCB` structure) to **\(n \times n\) diagonal** games by replacing each scalar with its natural \(n\)-dimensional analogue—**no new exploration phase, no tuned constants**.
+The paper proves **polylogarithmic Nash regret** for **2×2** bandit games (Theorem 6) and leaves **general** $n \times m$ games as an **open problem** (Section 5). This extension **verbatim-ports** the authors’ reference Algorithm 6 (`ouralgo`-style loop: same two phases, same `update`/`UCB` structure) to $n \times n$ **diagonal** games by replacing each scalar with its natural $n$-dimensional analogue—**no new exploration phase, no tuned constants**.
 
-**Game:** \(A_{ii} = 0.4 + 0.2 \cdot i/(n-1)\), zeros off-diagonal; **\(n \in \{2,3,4,5,7,10\}\)**. **Algorithms:** **UCB–Nash**, **EXP3**, and **OurAlg** vs a **column best-response** (mixed Nash on column indifference when applicable). **Trials:** **128** seeds per configuration (**full** run in the notebook; there is also a **quick** mode). Horizons **\(T \in \{10,\ldots,10^6\}\)**.
+**Game:** $A_{ii} = 0.4 + 0.2 \cdot i/(n-1)$, zeros off-diagonal; **$n \in \{2,3,4,5,7,10\}$**. **Algorithms:** **UCB–Nash**, **EXP3**, and **OurAlg** vs a **column best-response** (mixed Nash on column indifference when applicable). **Trials:** **128** seeds per configuration (**full** run in the notebook; there is also a **quick** mode). Horizons **$T \in \{10,\ldots,10^6\}$**.
 
 Notebook (full experiment + derivation): [`Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb`](Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb).
 
-### Mean total Nash regret at \(T = 10^6\)
+### Mean total Nash regret at $T = 10^6$
 
 Comparable horizon across board sizes (values are **means** over trials from the notebook printout).
 
-| \(n\) | UCB | EXP3 | OurAlg |
+| $n$ | UCB | EXP3 | OurAlg |
 |---:|---:|---:|---:|
 | 2 | 27.38 | 340.27 | **12.30** |
 | 3 | 37.19 | 890.49 | **21.33** |
@@ -322,11 +322,11 @@ Comparable horizon across board sizes (values are **means** over trials from the
 | 7 | 45.07 | 3882.14 | **609.88** |
 | 10 | 45.91 | 6449.91 | **6993.62** |
 
-### Log–log slopes (OurAlg vs \(T\))
+### Log–log slopes (OurAlg vs $T$)
 
-Between consecutive **\(T\)** decades, the notebook reports slopes of \(\log_{10}(\text{regret})\) vs \(\log_{10}(T)\). **Slope \(\approx 0.5\)** is consistent with **\(\sqrt T\)**-type growth on log–log axes; **polylog** growth would show **much smaller** slopes as \(T\) grows (flattening). Below: **maximum** slope among the five decade segments for **OurAlg** (higher \(\Rightarrow\) worse scaling in \(T\) over some window).
+Between consecutive $T$ decades, the notebook reports slopes of $\log_{10}(\mathrm{regret})$ vs $\log_{10}(T)$. **Slope $\approx 0.5$** is consistent with **$\sqrt{T}$**-type growth on log–log axes; **polylog** growth would show **much smaller** slopes as $T$ grows (flattening). Below: **maximum** slope among the five decade segments for **OurAlg** (higher $\Rightarrow$ worse scaling in $T$ over some window).
 
-| \(n\) | max segment slope (OurAlg) |
+| $n$ | max segment slope (OurAlg) |
 |---:|---:|
 | 2 | 0.31 |
 | 3 | 0.45 |
@@ -337,18 +337,18 @@ Between consecutive **\(T\)** decades, the notebook reports slopes of \(\log_{10
 
 ### What we take from this
 
-- **Relation to the theorem:** The **proved polylog guarantee applies to the 2×2 bandit setting**. These runs **do not** establish (or claim) the **same** guarantee for **\(n>2\)**—that regime is **explicitly open** in the paper. The notebook is **empirical evidence** about a **straight \(n \times n\) port**, not a proof.
+- **Relation to the theorem:** The **proved polylog guarantee applies to the 2×2 bandit setting**. These runs **do not** establish (or claim) the **same** guarantee for **$n>2$**—that regime is **explicitly open** in the paper. The notebook is **empirical evidence** about a **straight** $n \times n$ **port**, not a proof.
 
-- **\(n=2\):** **OurAlg** stays **far below** **EXP3** at \(T=10^6\) and **beats UCB** in the table; **OurAlg** slopes stay **well below 0.5** across segments → consistent with the **qualitative** picture of the **2×2** theory.
+- **$n=2$:** **OurAlg** stays **far below** **EXP3** at $T=10^6$ and **beats UCB** in the table; **OurAlg** slopes stay **well below 0.5** across segments → consistent with the **qualitative** picture of the **2×2** theory.
 
-- **Moderate \(n\) (e.g. 3–5):** Total regret **grows with \(n\)** at fixed \(T\). **OurAlg** still **beats EXP3** strongly here, but **vs UCB** **OurAlg** is **already worse by \(n=5\)** (\(98\) vs \(43\)). **Strong relative performance vs EXP3** is **not** the same as **polylog-in-\(T\)** for fixed \(n\ge 3\): the slope table already shows **segments approaching or exceeding** the **\(\sqrt T\)** reference (**0.5**) for **\(n\ge 4\)**.
+- **Moderate $n$ (e.g. 3–5):** Total regret **grows with $n$** at fixed $T$. **OurAlg** still **beats EXP3** strongly here, but **vs UCB** **OurAlg** is **already worse by $n=5$** ($98$ vs $43$). **Strong relative performance vs EXP3** is **not** the same as **polylog-in-$T$** for fixed $n \geq 3$: the slope table already shows **segments approaching or exceeding** the **$\sqrt{T}$** reference (**0.5**) for **$n \geq 4$**.
 
-- **Large \(n\) (\(7\), \(10\)):** **OurAlg** regret **explodes** relative to **\(n=2\)** and can **exceed** **EXP3** at \(n=10\) (\(\approx 6994\) vs \(\approx 6450\)) while **UCB** stays \(\sim 46\). Together with **large** slope spikes (\(\approx 1\)) for **OurAlg**, this matches **“\(n \times m\) is hard”**: the naive multidimensional extension does **not** exhibit the **same** **\(T\)**-scaling behaviour as in the **proved 2×2** regime.
+- **Large $n$ ($7$, $10$):** **OurAlg** regret **explodes** relative to **$n=2$** and can **exceed** **EXP3** at $n=10$ ($\approx 6994$ vs $\approx 6450$) while **UCB** stays $\sim 46$. Together with **large** slope spikes ($\approx 1$) for **OurAlg**, this matches **“$n \times m$ is hard”**: the naive multidimensional extension does **not** exhibit the **same** $T$-scaling behaviour as in the **proved 2×2** regime.
 
-- **Diagnosis (see notebook §6):** On diagonal games, the conditioning quantity **\(D\)** used in the step **shrinks** as \(n\) grows; bandit **coverage** of \(n^2\) entries in Phase 1 also **degrades**. Those mechanisms are **orthogonal** to “the formulas extend”—they explain **why** an **open problem** remains open.
+- **Diagnosis (see notebook §6):** On diagonal games, the conditioning quantity **$D$** used in the step **shrinks** as $n$ grows; bandit **coverage** of $n^2$ entries in Phase 1 also **degrades**. Those mechanisms are **orthogonal** to “the formulas extend”—they explain **why** an **open problem** remains open.
 
 Run the notebook to regenerate figures (`extension_nm_results.png` if you execute the plotting cell) or switch **`QUICK_MODE`** for shorter jobs.
 
 ## Extension conclusion (beyond 2×2)
 
-- **Takeaway:** **Verbatim** lift of Algorithm 6 to **\(n \times n\)** diagonal bandits: **good empirical match** to the **intended 2×2** behaviour at **\(n=2\)**, **gradual degradation** for **moderate \(n\)**, **clear failure mode** at **large \(n\)** on this game class—**aligned with Section 5** (no general theorem claimed).
+- **Takeaway:** **Verbatim** lift of Algorithm 6 to $n \times n$ diagonal bandits: **good empirical match** to the **intended 2×2** behaviour at **$n=2$**, **gradual degradation** for **moderate $n$**, **clear failure mode** at **large $n$** on this game class—**aligned with Section 5** (no general theorem claimed).
