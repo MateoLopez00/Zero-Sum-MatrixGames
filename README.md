@@ -127,18 +127,17 @@ compared to the original `threshold = min(log(T)**2, sqrt(T))`.
 
 ### Convergence (`n = 100`)
 
-**Setup:** Each plot is **cumulative Nash regret** (log scale) vs time for Nash, Hedge, Our-Algo, and Our-Algo-NoiseAware under **diagonal full-information Gaussian noise** at fixed noise standard deviation σ (left → right: σ = 0.1, 0.2, 0.3). **Assumption:** curves are means over repeated runs (shaded bands).
+**Setup:** Each plot is **cumulative Nash regret** (log scale) vs time for Nash, Hedge, Our-Algo, and Our-Algo-NoiseAware under **diagonal full-information Gaussian noise** at noise standard deviation σ (**σ = 0.1**, then **0.2**, then **0.3** below). **Assumption:** curves are means over repeated runs (shaded bands).
 
 <table>
   <tr>
-    <td width="33%"><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p1.png" width="100%" alt="Section 3 convergence sigma 0.1"></td>
-    <td width="33%"><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p2.png" width="100%" alt="Section 3 convergence sigma 0.2"></td>
-    <td width="34%"><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p3.png" width="100%" alt="Section 3 convergence sigma 0.3"></td>
+    <td align="center"><b>σ = 0.1</b><br><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p1.png" width="100%" alt="Section 3 convergence sigma 0.1"></td>
   </tr>
   <tr>
-    <td align="center"><b>σ = 0.1</b></td>
-    <td align="center"><b>σ = 0.2</b></td>
-    <td align="center"><b>σ = 0.3</b></td>
+    <td align="center"><b>σ = 0.2</b><br><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p2.png" width="100%" alt="Section 3 convergence sigma 0.2"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>σ = 0.3</b><br><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p3.png" width="100%" alt="Section 3 convergence sigma 0.3"></td>
   </tr>
 </table>
 
@@ -158,19 +157,21 @@ We compare only the **original** bandit **OurAlg** from the paper with **UCB** a
 
 ### Convergence
 
-Each figure has **three panels** (Adversaries 1–3): **UCB** (blue), **EXP3** (green), **OurAlg** (orange). **Setup:** same two-phase protocol as the base Section 4 experiment—Phase 1 adversary-specific, Phase 2 pure best-response—so a **jump near `T / 2`** is expected when the column rule changes. **Assumption:** Gaussian noise only on the **observed** bandit reward; regret is Nash regret vs the game value.
+**Setup:** Each figure has **three panels** (Adversaries 1–3): **UCB** (blue), **EXP3** (green), **OurAlg** (orange). Same two-phase protocol as the base Section 4 experiment—Phase 1 adversary-specific, Phase 2 pure best-response—so a **jump near `T / 2`** is expected when the column rule changes. Three stacked plots below use **σ = 0.1**, then **0.2**, then **0.3**. **Assumption:** Gaussian noise only on the **observed** bandit reward; regret is Nash regret vs the game value.
 
-![Section 4 convergence sigma=0.1](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p1.png)
+<table>
+  <tr>
+    <td align="center"><b>σ = 0.1</b><br><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p1.png" width="100%" alt="Section 4 convergence sigma 0.1"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>σ = 0.2</b><br><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p2.png" width="100%" alt="Section 4 convergence sigma 0.2"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>σ = 0.3</b><br><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p3.png" width="100%" alt="Section 4 convergence sigma 0.3"></td>
+  </tr>
+</table>
 
-**What we see:** Mild noise: curves are smoother; ordering across algorithms **depends on the adversary** (UCB can be competitive where exploration aligns with the phase structure). **Why:** low σ keeps payoff estimates usable; differences are driven mainly by **adversary rules**, not noise drowning the signal.
-
-![Section 4 convergence sigma=0.2](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p2.png)
-
-**What we see:** Moderate noise: cumulative regret shifts upward overall; gaps between methods widen on harder adversaries. **Why:** optimistic indices and exploration rates interact with **noisy cell observations**—mistakes persist in the statistics UCB/EXP3 rely on.
-
-![Section 4 convergence sigma=0.3](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p3.png)
-
-**What we see:** Strong noise: on **Adversary 3**, UCB and EXP3 spike to very large regret after the phase change, while **OurAlg** stays low (flat early, then a modest rise). **Why:** Adversary 3’s Phase 1 is comparatively benign; after **`T / 2`** the column becomes more punitive—generic bandit algorithms built for stochastic or unstructured noise **mis-track** the shift under noisy samples, whereas OurAlg’s update matches the paper’s adversarial bandit design and concentrates regret growth much more slowly here.
+At **low σ**, curves are relatively smooth and algorithm ranking **depends on the adversary**—noise is mild enough that UCB can still be competitive where its exploration matches the phase schedule; differences are mostly **adversary-driven**. As σ rises to **moderate**, cumulative regret moves up and spreads across methods because optimistic indices and sampling interact with **noisy cell observations**, so mistakes linger in UCB/EXP3’s statistics. At **high σ**, especially on **Adversary 3**, UCB and EXP3 blow up after the phase switch while **OurAlg** stays comparatively flat: Phase 1 is easy there, but after **`T / 2`** the column becomes harsh—generic bandit rules **mis-track** that shift under heavy observation noise, whereas OurAlg’s update matches the paper’s adversarial bandit construction and keeps regret growth far smaller.
 
 ## Extension conclusion
 
