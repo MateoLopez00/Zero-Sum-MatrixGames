@@ -7,6 +7,10 @@ plots/
 # Keep Section 3 documentation figures under version control
 !Full_information_feedback/plots/
 !Full_information_feedback/plots/*.png
+!Full_information_feedback/Nash_regret_curve_section3/plots/
+!Full_information_feedback/Nash_regret_curve_section3/plots/*.png
+!Bandit_feedback/Nash_regret_curve_section4/plots/
+!Bandit_feedback/Nash_regret_curve_section4/plots/*.png
 
 # Keep extension documentation figures under version control
 !Extensions/**/plots/

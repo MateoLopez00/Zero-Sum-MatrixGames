@@ -24,7 +24,13 @@ pip install -r requirements.txt
 
 ## Section 3 plots
 
-The four plots below were generated with `Full_information_feedback/experiments_section3.py` using the `paper-lite` preset and the `official` variant for `n_actions = 10, 20, 50, 100`.
+**Nash regret cumulative curves:** [`Full_information_feedback/Nash_regret_curve_section3/section3_nashregret_curves.ipynb`](Full_information_feedback/Nash_regret_curve_section3/section3_nashregret_curves.ipynb) — **2×2 panels** ($n \in \{10,20,50,100\}$): $\log_{10}$ cumulative Nash regret vs round $t$ for Nash, Hedge, and Our-Algo. The plot below was generated with `RUN_MODE=HEAVY` (`T=30000`, 6 seeds).
+
+![Section 3 cumulative Nash regret curves](Full_information_feedback/Nash_regret_curve_section3/plots/section3_cumulative_nashregret_heavy_T30000.png)
+
+The cumulative trajectories show the same qualitative trend as the terminal-regret reproduction while exposing the time evolution directly. Nash has the steepest long-run growth in the smaller diagonal games, Our-Algo rises quickly and then flattens, and Hedge is competitive with a smoother growth profile. As `n` increases, the curves move closer together; at `n=100`, the finite-horizon ordering is tight, which is consistent with the stronger `n`-dependence in the full-information theory and with the official Section 3 regret accounting used for Our-Algo.
+
+The four paper-style terminal-regret plots below were generated with `Full_information_feedback/experiments_section3.py` using the `paper-lite` preset and the `official` variant for `n_actions = 10, 20, 50, 100`.
 
 <table>
   <tr>
@@ -45,7 +51,7 @@ The four plots below were generated with `Full_information_feedback/experiments_
   </tr>
 </table>
 
-At `n=10`, Our-Algo grows much slower than Nash and Hedge. The same qualitative behavior holds at `n=20`, where the proposed method has a flatter regret curve than the baselines. At `n=50` and `n=100`, Our-Algo continues to outperform the baselines across horizons, although the gap shrinks as the matrix size grows.
+In the paper-style terminal-regret plots, `n=10` shows Our-Algo growing much slower than Nash and Hedge. The same qualitative behavior holds at `n=20`, where the proposed method has a flatter regret curve than the baselines. At `n=50` and `n=100`, the gap shrinks as the matrix size grows, matching the stronger dimension dependence in the theory.
 
 ## Empirical vs theoretical
 
@@ -55,7 +61,7 @@ On log-log axes, a `sqrt(T)` regret rate shows up as a straight line with slope 
 - **Hedge:** `O(sqrt(T log n))`, the standard online learning bound.
 - **Nash (empirical):** `O(sqrt(T))`, a baseline that plays Nash of the empirical matrix.
 
-The four plots above match this: Hedge and Nash trace approximately straight lines with slope near `0.5`, while Our-Algo's curve visibly flattens across horizons, consistent with the `polylog(T)` rate. The `n`-dependence predicted by the theory is also visible, since the gap between Our-Algo and the baselines shrinks as `n` grows from 10 to 100, though Our-Algo still stays clearly below `sqrt(T)` behavior.
+The paper-style terminal-regret plots match this: Hedge and Nash trace approximately straight lines with slope near `0.5`, while Our-Algo's curve visibly flattens across horizons, consistent with the `polylog(T)` rate. The cumulative curves above show the same story over time rather than only at terminal horizons, with the methods becoming harder to separate as `n` grows.
 
 ---
 
@@ -80,9 +86,15 @@ The plot shows `log(total Nash regret)` vs `log(T)` for each adversary. The clai
 
 ## Figure 2 reproduction (paper Section 4.1)
 
-The figure below was reproduced with `Bandit_feedback/section4_reproduction.ipynb`. The same experiment is also available in `Bandit_feedback/section4_bandit.py`.
+The original Figure 2 below was reproduced with `Bandit_feedback/section4_reproduction.ipynb`. The same experiment is also available in `Bandit_feedback/section4_bandit.py`.
 
-Across all three adversaries, Our-Algo stays essentially flat while UCB and EXP3 grow polynomially, most dramatically against Adversary 3, matching the paper's core claim.
+**Nash regret cumulative curves:** [`Bandit_feedback/Nash_regret_curve_section4/section4_nashregret_curves.ipynb`](Bandit_feedback/Nash_regret_curve_section4/section4_nashregret_curves.ipynb) — **three panels** (adversaries 1–3): $\log_{10}$ cumulative Nash regret vs round $t$ for UCB, EXP3, and OurAlg; the dashed vertical line marks the phase switch at $T/2$. The plot below was generated with `RUN_MODE=HEAVY` (`T=50000`, 32 seeds).
+
+![Section 4 cumulative Nash regret curves](Bandit_feedback/Nash_regret_curve_section4/plots/section4_cumulative_nashregret_heavy_T50000.png)
+
+The cumulative trajectories make the two-phase structure visible. Against Adversaries 1 and 2, UCB remains competitive while EXP3 continues to grow and OurAlg quickly plateaus at a moderate regret level. Against Adversary 3, all methods have negligible regret in Phase 1 because the column plays Nash, then the $T/2$ switch sharply separates the methods: UCB and EXP3 jump to much larger regret, while OurAlg stays far lower and grows slowly. This is the clearest cumulative-curve version of the Section 4 claim.
+
+Across all three adversaries, Our-Algo is especially robust to the phase switch, most dramatically against Adversary 3, matching the paper's core claim.
 
 ![Section 4 Figure 2](Bandit_feedback/section4_fig2.png)
 
