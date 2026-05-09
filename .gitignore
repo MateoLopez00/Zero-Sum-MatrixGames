@@ -11,4 +11,9 @@ plots/
 # Keep extension documentation figures under version control
 !Extensions/**/plots/
 !Extensions/**/plots/*.png
+# README extension section (Noise Robustness) — explicit per-folder un-ignore
+!Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/
+!Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/*.png
+!Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/
+!Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/*.png
 

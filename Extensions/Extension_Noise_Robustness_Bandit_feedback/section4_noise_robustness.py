@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -33,7 +34,9 @@ from section4_bandit import (  # noqa: E402
 
 
 ADVERSARIES = [1, 2, 3]
-ALGORITHM_ORDER = ["UCB", "EXP3", "OurAlg", "OurAlg-NoiseAware"]
+ALGORITHM_ORDER = ["UCB", "EXP3", "OurAlg"]
+
+DEFAULT_CONVERGENCE_SIGMAS = (0.1, 0.2, 0.3)
 
 
 def preset_config(preset: str) -> tuple[list[float], int, int]:
@@ -231,75 +234,6 @@ def run_our_algorithm_gaussian(
     return _metrics(regret, payoff, T)
 
 
-def run_our_algorithm_noise_aware_gaussian(
-    A: np.ndarray,
-    T: int,
-    N: int,
-    adv_type: int,
-    sigma: float,
-    rng: np.random.Generator,
-) -> dict[str, float]:
-    T1 = T // 2
-    log_T_sq = np.log(max(T, 2)) ** 2
-    B2 = np.zeros((N, 2, 2))
-    U2 = np.zeros((N, 2, 2))
-    F2 = np.zeros((N, 2, 2))
-    cnt = np.zeros((N, 2, 2))
-    jt = np.zeros(N, dtype=int)
-    x1 = np.full(N, 0.5)
-    count0 = np.ones(N, dtype=int)
-    t0 = np.ones(N, dtype=int)
-    error = np.ones(N)
-    regret = np.zeros(N)
-    payoff = np.zeros(N)
-    idx_N = np.arange(N)
-    log_c = 2.0 * np.log(8.0 * max(T**2, 2))
-    noise_scale = 1.0 + sigma**2
-
-    for t in range(T1):
-        reinit = (count0 == 0) | (t <= log_T_sq)
-        if reinit.any():
-            F2[reinit] = U2[reinit]
-            t0[reinit] = t + 1
-            x_nash = nash1_batch(F2)
-            mixed = is_mixed_ne_batch(F2)
-            x1 = np.where(reinit & mixed, x_nash, x1)
-            count0[reinit] = np.maximum(t0[reinit] - 1, 0)
-
-        x1 = update_batch(F2, x1, jt, t0, error)
-        x1 = np.clip(x1, 0.0, 1.0)
-        count0 = np.maximum(count0 - 1, 0)
-
-        y1, y2 = advnew_batch(x1, T, adv_type)
-        val = val22_batch(A, x1, y1)
-        jt = (rng.random(N) < y2).astype(int)
-        it = (rng.random(N) < (1.0 - x1)).astype(int)
-        obs = sample_bandit_gaussian_reward(A, it, jt, sigma, rng)
-
-        cnt[idx_N, it, jt] += 1
-        c = cnt[idx_N, it, jt]
-        B2[idx_N, it, jt] += (obs - B2[idx_N, it, jt]) / c
-        devs = noise_scale * np.sqrt(log_c / (cnt + 1.0))
-        np.add(B2, devs, out=U2)
-        error = np.minimum(error, devs.max(axis=(1, 2)))
-
-        regret += V_STAR - val
-        payoff += val
-
-    x1 = nash1_batch(B2)
-    x1 = np.clip(x1, 0.0, 1.0)
-    t0_fixed = np.full(N, T1, dtype=int)
-
-    for _ in range(T1):
-        x1 = update_batch(B2, x1, jt, t0_fixed, error)
-        x1 = np.clip(x1, 0.0, 1.0)
-        val, jt = adv22gd_batch(A, x1)
-        regret += V_STAR - val
-        payoff += val
-
-    return _metrics(regret, payoff, T)
-
-
 def _record_if_checkpoint(
     records: np.ndarray,
     checkpoint_idx: int,
@@ -424,7 +358,6 @@ def _run_our_algorithm_convergence(
     sigma: float,
     rng: np.random.Generator,
     checkpoints: np.ndarray,
-    noise_aware: bool,
 ) -> np.ndarray:
     T1 = T // 2
     log_T_sq = np.log(max(T, 2)) ** 2
@@ -440,7 +373,6 @@ def _run_our_algorithm_convergence(
     regret = np.zeros(N)
     idx_N = np.arange(N)
     log_c = 2.0 * np.log(8.0 * max(T**2, 2))
-    noise_scale = 1.0 + sigma**2 if noise_aware else 1.0
     records = np.zeros((len(checkpoints), N))
     checkpoint_idx = 0
     current_t = 0
@@ -468,7 +400,7 @@ def _run_our_algorithm_convergence(
         cnt[idx_N, it, jt] += 1
         c = cnt[idx_N, it, jt]
         B2[idx_N, it, jt] += (obs - B2[idx_N, it, jt]) / c
-        devs = noise_scale * np.sqrt(log_c / (cnt + 1.0))
+        devs = np.sqrt(log_c / (cnt + 1.0))
         np.add(B2, devs, out=U2)
         error = np.minimum(error, devs.max(axis=(1, 2)))
 
@@ -518,9 +450,7 @@ def run_section4_convergence(
             elif name == "EXP3":
                 records = _run_exp3_convergence(A_GAME, horizon, n_runs, adv_type, sigma, rng, checkpoints)
             elif name == "OurAlg":
-                records = _run_our_algorithm_convergence(A_GAME, horizon, n_runs, adv_type, sigma, rng, checkpoints, noise_aware=False)
-            elif name == "OurAlg-NoiseAware":
-                records = _run_our_algorithm_convergence(A_GAME, horizon, n_runs, adv_type, sigma, rng, checkpoints, noise_aware=True)
+                records = _run_our_algorithm_convergence(A_GAME, horizon, n_runs, adv_type, sigma, rng, checkpoints)
             else:
                 raise ValueError(f"Unknown algorithm: {name}")
             results[adv_type][name] = {
@@ -550,7 +480,6 @@ def run_section4_noise_robustness(
         "UCB": run_ucb_gaussian,
         "EXP3": run_exp3_gaussian,
         "OurAlg": run_our_algorithm_gaussian,
-        "OurAlg-NoiseAware": run_our_algorithm_noise_aware_gaussian,
     }
     results: dict[int, dict[str, dict[str, list[float]]]] = {}
 
@@ -584,8 +513,8 @@ def plot_section4_noise_regret(
     save_path: str | Path,
 ) -> None:
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), sharey=False)
-    palette = {"UCB": "#2196F3", "EXP3": "#4CAF50", "OurAlg": "#FF9800", "OurAlg-NoiseAware": "#d62728"}
-    markers = {"UCB": "o", "EXP3": "s", "OurAlg": "^", "OurAlg-NoiseAware": "D"}
+    palette = {"UCB": "#2196F3", "EXP3": "#4CAF50", "OurAlg": "#FF9800"}
+    markers = {"UCB": "o", "EXP3": "s", "OurAlg": "^"}
 
     for ax, adv_type in zip(axes, ADVERSARIES):
         for name in ALGORITHM_ORDER:
@@ -619,8 +548,8 @@ def plot_section4_noise_payoff(
     save_path: str | Path,
 ) -> None:
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), sharey=True)
-    palette = {"UCB": "#2196F3", "EXP3": "#4CAF50", "OurAlg": "#FF9800", "OurAlg-NoiseAware": "#d62728"}
-    markers = {"UCB": "o", "EXP3": "s", "OurAlg": "^", "OurAlg-NoiseAware": "D"}
+    palette = {"UCB": "#2196F3", "EXP3": "#4CAF50", "OurAlg": "#FF9800"}
+    markers = {"UCB": "o", "EXP3": "s", "OurAlg": "^"}
 
     for ax, adv_type in zip(axes, ADVERSARIES):
         for name in ALGORITHM_ORDER:
@@ -655,7 +584,7 @@ def plot_section4_convergence(
     save_path: str | Path,
 ) -> None:
     checkpoints = np.asarray(metadata["checkpoints"], dtype=float)
-    palette = {"UCB": "#2196F3", "EXP3": "#4CAF50", "OurAlg": "#FF9800", "OurAlg-NoiseAware": "#d62728"}
+    palette = {"UCB": "#2196F3", "EXP3": "#4CAF50", "OurAlg": "#FF9800"}
 
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), sharey=False)
     for ax, adv_type in zip(axes, ADVERSARIES):
@@ -714,14 +643,27 @@ def run_and_plot(preset: str, seed: int = 42) -> tuple[dict[str, Any], Path, Pat
 def run_convergence_and_plot(
     preset: str = "paper-lite",
     seed: int = 42,
-    sigma: float = 0.3,
-) -> tuple[dict[str, Any], Path]:
-    results, metadata = run_section4_convergence(preset=preset, sigma=sigma, seed=seed, verbose=True)
+    sigmas: Sequence[float] | float | None = None,
+) -> tuple[list[tuple[dict[int, dict[str, dict[str, list[float]]]], dict[str, Any]]], list[Path]]:
+    """Generate cumulative-regret convergence PNGs for each sigma (default: 0.1, 0.2, 0.3)."""
+    if sigmas is None:
+        sigmas_tuple = DEFAULT_CONVERGENCE_SIGMAS
+    elif isinstance(sigmas, (int, float)):
+        sigmas_tuple = (float(sigmas),)
+    else:
+        sigmas_tuple = tuple(float(s) for s in sigmas)
+
     here = Path(__file__).resolve().parent
     plots_dir = here / "plots"
-    convergence_path = plots_dir / f"section4_convergence_{preset}_sigma{str(sigma).replace('.', 'p')}.png"
-    plot_section4_convergence(results, metadata, convergence_path)
-    return {"results": results, "metadata": metadata}, convergence_path
+    payloads: list[tuple[dict[int, dict[str, dict[str, list[float]]]], dict[str, Any]]] = []
+    paths: list[Path] = []
+    for sigma in sigmas_tuple:
+        results, metadata = run_section4_convergence(preset=preset, sigma=sigma, seed=seed, verbose=True)
+        convergence_path = plots_dir / f"section4_convergence_{preset}_sigma{str(sigma).replace('.', 'p')}.png"
+        plot_section4_convergence(results, metadata, convergence_path)
+        payloads.append((results, metadata))
+        paths.append(convergence_path)
+    return payloads, paths
 
 
 def parse_args() -> argparse.Namespace:

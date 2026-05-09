@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import math
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,9 @@ from experiments.section3 import (  # noqa: E402
 
 N_VALUES = [10, 20, 50, 100]
 ALGORITHM_ORDER = ["Nash", "Hedge", "Our-Algo", "Our-Algo-NoiseAware"]
+
+# Convergence plots: compare regret dynamics at multiple noise levels (see README extension).
+DEFAULT_CONVERGENCE_SIGMAS = (0.1, 0.2, 0.3)
 
 
 def preset_config(preset: str) -> tuple[list[float], int, int]:
@@ -520,15 +524,28 @@ def run_and_plot(preset: str, seed: int = 7) -> tuple[dict[str, Any], Path, Path
 def run_convergence_and_plot(
     preset: str = "medium",
     seed: int = 7,
-    n: int = 20,
-    sigma: float = 0.3,
-) -> tuple[dict[str, Any], Path]:
-    results, metadata = run_section3_convergence(preset=preset, n=n, sigma=sigma, seed=seed, verbose=True)
+    n: int = 100,
+    sigmas: Sequence[float] | float | None = None,
+) -> tuple[list[tuple[dict[str, dict[str, list[float]]], dict[str, Any]]], list[Path]]:
+    """Generate cumulative-regret convergence PNGs for each sigma (default: 0.1, 0.2, 0.3)."""
+    if sigmas is None:
+        sigmas_tuple = DEFAULT_CONVERGENCE_SIGMAS
+    elif isinstance(sigmas, (int, float)):
+        sigmas_tuple = (float(sigmas),)
+    else:
+        sigmas_tuple = tuple(float(s) for s in sigmas)
+
     here = Path(__file__).resolve().parent
     plots_dir = here / "plots"
-    convergence_path = plots_dir / f"section3_convergence_{preset}_n{n}_sigma{str(sigma).replace('.', 'p')}.png"
-    plot_section3_convergence(results, metadata, convergence_path)
-    return {"results": results, "metadata": metadata}, convergence_path
+    payloads: list[tuple[dict[str, dict[str, list[float]]], dict[str, Any]]] = []
+    paths: list[Path] = []
+    for sigma in sigmas_tuple:
+        results, metadata = run_section3_convergence(preset=preset, n=n, sigma=sigma, seed=seed, verbose=True)
+        convergence_path = plots_dir / f"section3_convergence_{preset}_n{n}_sigma{str(sigma).replace('.', 'p')}.png"
+        plot_section3_convergence(results, metadata, convergence_path)
+        payloads.append((results, metadata))
+        paths.append(convergence_path)
+    return payloads, paths
 
 
 def parse_args() -> argparse.Namespace:

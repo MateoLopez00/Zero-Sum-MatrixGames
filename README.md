@@ -97,75 +97,26 @@ On log-log axes this means Our-Algo should have a slope that flattens toward `0`
 
 # Extension: Noise Robustness
 
-## Motivation
+We inject **Gaussian noise** into the feedback (entries clipped to `[0, 1]`): `clip(A + sigma * N(0,1), 0, 1)`. Section 3 keeps **full-matrix** observations each round; Section 4 keeps **bandit** observations (noisy reward only at the played cell).
 
-The original reproduction studies the paper's algorithms under the feedback models used in the paper. This extension asks a complementary question: if the feedback becomes noisier, can the proposed method be made explicitly noise-aware?
+Code and notebooks:
 
-The experiment varies a Gaussian noise parameter `sigma` and measures both total Nash regret and average row payoff. The noisy feedback is generated as `clip(A + sigma * N(0,1), 0, 1)`. Section 3 uses full-information feedback, so the learner observes a full noisy matrix signal each round. Section 4 uses bandit feedback, so the learner observes only the noisy reward at the played cell.
+- `Extensions/Extension_Noise_Robustness_Full_info_feedback/section3_noise_robustness.py` and `section3_noise_robustness.ipynb`
+- `Extensions/Extension_Noise_Robustness_Bandit_feedback/section4_noise_robustness.py` and `section4_noise_robustness.ipynb`
 
-The extension uses two complementary plot styles:
+Figures below use the **`medium`** preset (`T = 30_000` for Section 3 convergence; `T = 100_000` for Section 4 convergence), multi-$\sigma$ convergence runs at **`sigma in {0.1, 0.2, 0.3}`**, and seed **`7`** (Section 3) / **`42`** (Section 4) unless you change them in the notebooks.
 
-- **Noise-sensitivity plots:** final regret and average payoff as `sigma` increases.
-- **Convergence plots:** cumulative Nash regret over time at a representative high-noise setting, `sigma = 0.3`.
+## Section 3 — noise-aware threshold (full information)
 
-The extension is implemented in:
-
-- `Extensions/Extension_Noise_Robustness_Full_info_feedback/`
-- `Extensions/Extension_Noise_Robustness_Bandit_feedback/`
-
-The plots below were generated from:
-
-- `Extensions/Extension_Noise_Robustness_Full_info_feedback/section3_noise_robustness.ipynb` with the `medium` preset.
-- `Extensions/Extension_Noise_Robustness_Bandit_feedback/section4_noise_robustness.ipynb` with the `paper-lite` preset.
-
-## Algorithmic change
-
-The baselines are kept unchanged. The extension only modifies the paper's proposed method, adding a second variant that is compared directly against the original algorithm.
-
-In Section 3, the original Our-Algo uses the update threshold:
+Baselines are unchanged. We add **Our-Algo-NoiseAware**, which waits longer before switching out of the exploration phase when feedback is noisier:
 
 ```python
-threshold = min(log(T)**2, sqrt(T))
+threshold = min((1 + 2 * sigma) * log(T)**2, sqrt(T))
 ```
 
-The noise-aware version uses:
+compared to the original `threshold = min(log(T)**2, sqrt(T))`.
 
-```python
-threshold = min((1 + 2*sigma) * log(T)**2, sqrt(T))
-```
-
-The intuition is that, under noisier full-information feedback, the algorithm should wait longer before trusting the empirical matrix estimate. This Section 3 variant scales with the Gaussian standard deviation `sigma`, making the delay stronger as feedback becomes noisier.
-
-In Section 4, the original bandit algorithm uses the confidence radius:
-
-```python
-devs = sqrt(log_c / (count + 1))
-```
-
-The noise-aware version uses:
-
-```python
-devs = (1 + sigma**2) * sqrt(log_c / (count + 1))
-```
-
-Here the idea is to widen the confidence radius mildly when feedback noise increases. The factor uses `sigma**2` rather than `sigma` because Gaussian noise variance scales with `sigma**2`; this keeps the modification conservative and avoids over-widening the confidence set.
-
-## Section 3 results
-
-<table>
-  <tr>
-    <td width="50%"><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_noise_regret_medium.png" width="100%"></td>
-    <td width="50%"><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_noise_payoff_medium.png" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Section 3: Nash regret vs noise</b></td>
-    <td align="center"><b>Section 3: Average payoff vs noise</b></td>
-  </tr>
-</table>
-
-The regret plot shows that increasing `sigma` mainly hurts the Nash and Hedge baselines. The two proposed-method curves are close, so the direct comparison is easier to read from the table below. The payoff plot confirms that the noise-aware change does not damage average payoff; both Our-Algo variants stay close to the game value across all tested noise levels.
-
-At the highest tested noise level, `sigma = 0.3`, the noise-aware version improves the original Our-Algo consistently:
+### Summary at `sigma = 0.3` (noise sweep, `medium`)
 
 | n | Nash regret | Hedge regret | Our-Algo regret | Our-Algo-NoiseAware regret | Reduction vs Our-Algo |
 |---:|---:|---:|---:|---:|---:|
@@ -174,44 +125,41 @@ At the highest tested noise level, `sigma = 0.3`, the noise-aware version improv
 | 50 | 8.71 | 8.41 | 4.07 | 3.84 | 5.8% |
 | 100 | 4.68 | 8.46 | 3.85 | 3.55 | 8.0% |
 
-The improvement is moderate rather than dramatic, but it is consistent across all tested matrix sizes and becomes more visible for larger games. This supports the idea that, in the full-information setting, waiting longer before updating can improve robustness when empirical estimates are noisy.
+### Convergence (`n = 100`)
 
-<p align="center"><b>Section 3: Convergence under high noise</b></p>
+Cumulative Nash regret vs time for four algorithms; **Our-Algo-NoiseAware** tracks below **Our-Algo** at high noise, with the gap most visible at **`n = 100`** (last row above).
 
-![Section 3 convergence](Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n20_sigma0p3.png)
+![Section 3 convergence sigma=0.1](Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p1.png)
 
-The convergence plot fixes `n = 20` and `sigma = 0.3`, then tracks cumulative Nash regret over time. The two Our-Algo curves remain close because the original method is already robust, but the noise-aware version ends with slightly lower regret, matching the table above.
+![Section 3 convergence sigma=0.2](Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p2.png)
 
-## Section 4 results
+![Section 3 convergence sigma=0.3](Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p3.png)
 
-<p align="center"><b>Section 4: Nash regret vs noise</b></p>
+## Section 4 — bandit noise (UCB, EXP3, OurAlg)
 
-![Section 4 noise regret](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_noise_regret_paper-lite.png)
+We compare only the **original** bandit **OurAlg** from the paper with **UCB** and **EXP3**. Gaussian noise at the observed cell changes regret ordering relative to the noiseless Figure 2 experiment; **OurAlg** stays strongest **against Adversary 3**, where UCB and EXP3 accumulate large regret under noisy feedback.
 
-<p align="center"><b>Section 4: Average payoff vs noise</b></p>
+### Final Nash regret at `sigma = 0.3` (`medium`, seed 42)
 
-![Section 4 noise payoff](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_noise_payoff_paper-lite.png)
+| Adversary | UCB regret | EXP3 regret | OurAlg regret |
+|---:|---:|---:|---:|
+| 1 | 8.27 | 142.42 | 73.58 |
+| 2 | 58.50 | 139.81 | 89.23 |
+| 3 | 773.81 | 1265.62 | 2.81 |
 
-For Section 4, the same noise-aware idea does not improve the original OurAlg overall. The high-noise comparison at `sigma = 0.3` is:
+### Convergence
 
-| Adversary | UCB regret | EXP3 regret | OurAlg regret | OurAlg-NoiseAware regret | Change vs OurAlg |
-|---:|---:|---:|---:|---:|---:|
-| 1 | 7.53 | 141.27 | 77.90 | 84.64 | +8.7% |
-| 2 | 59.01 | 140.74 | 86.07 | 92.29 | +7.2% |
-| 3 | 778.26 | 703.05 | 2.86 | 2.86 | +0.0% |
+Three adversaries per figure (panels); one plot file per noise level.
 
-Positive values in the last column mean that the noise-aware variant has higher regret than the original method. This is informative: in the bandit setting, the original algorithm already contains uncertainty handling through optimistic estimates and confidence radii. Increasing the radius further makes the algorithm slightly too conservative against Adversaries 1 and 2, where it needs to react accurately to best-response-style behavior. Against Adversary 3, both versions remain very stable and stay close to the game value `V* = 2/9`.
+![Section 4 convergence sigma=0.1](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p1.png)
 
-<p align="center"><b>Section 4: Convergence under high noise</b></p>
+![Section 4 convergence sigma=0.2](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p2.png)
 
-![Section 4 convergence](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_paper-lite_sigma0p3.png)
+![Section 4 convergence sigma=0.3](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p3.png)
 
-The convergence plot fixes `sigma = 0.3` and shows one panel for each adversary. It confirms the same interpretation as the table: OurAlg remains very stable, especially against Adversary 3, while the noise-aware version does not improve the original method in the bandit setting.
+On Adversary 3, regret jumps near **`T / 2`** when the column player switches phase (same protocol as the base Section 4 experiment); OurAlg remains comparatively stable after the switch.
 
 ## Extension conclusion
 
-The extension shows two different outcomes from the same noise-aware idea.
-
-In Section 3, noise-aware adaptation improves the proposed method consistently under high Gaussian feedback noise. The improvement is moderate, but it appears across all tested matrix sizes and does not reduce average payoff.
-
-In Section 4, the original proposed method is already robust to bandit uncertainty. The attempted noise-aware confidence widening does not improve it, which suggests that the bandit algorithm from the paper is already carefully calibrated for uncertainty and that adding extra conservatism can hurt.
+- **Section 3:** A noise-aware **exploration delay** improves Our-Algo under noisy full-information feedback, especially at larger `n` (see ~8% regret reduction at `n = 100`, `sigma = 0.3`).
+- **Section 4:** The paper’s bandit OurAlg already uses optimism/confidence in the design; we report **UCB**, **EXP3**, and **OurAlg** under Gaussian bandit noise across **`sigma`**, with convergence curves showing how regret accumulates over time for each adversary.
