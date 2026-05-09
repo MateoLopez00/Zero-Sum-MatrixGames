@@ -104,7 +104,7 @@ Code and notebooks:
 - `Extensions/Extension_Noise_Robustness_Full_info_feedback/section3_noise_robustness.py` and `section3_noise_robustness.ipynb`
 - `Extensions/Extension_Noise_Robustness_Bandit_feedback/section4_noise_robustness.py` and `section4_noise_robustness.ipynb`
 
-Figures below use the **`medium`** preset (`T = 30_000` for Section 3 convergence; `T = 100_000` for Section 4 convergence), multi-$\sigma$ convergence runs at **`sigma in {0.1, 0.2, 0.3}`**, and seed **`7`** (Section 3) / **`42`** (Section 4) unless you change them in the notebooks.
+Figures below use the **`medium`** preset (`T = 30_000` for Section 3 convergence; `T = 100_000` for Section 4 convergence), multi-sigma convergence runs at **`sigma` ∈ {0.1, 0.2, 0.3}**, and seed **`7`** (Section 3) / **`42`** (Section 4) unless you change them in the notebooks.
 
 ## Section 3 — noise-aware threshold (full information)
 
@@ -127,19 +127,22 @@ compared to the original `threshold = min(log(T)**2, sqrt(T))`.
 
 ### Convergence (`n = 100`)
 
-Each plot shows **cumulative Nash regret** (log scale) vs time for Nash, Hedge, Our-Algo, and Our-Algo-NoiseAware under **diagonal full-information Gaussian noise** at fixed \(\sigma\). **Assumption:** behavior is averaged over repeated runs (shaded bands); curves should be read as typical paths under that noise model.
+**Setup:** Each plot is **cumulative Nash regret** (log scale) vs time for Nash, Hedge, Our-Algo, and Our-Algo-NoiseAware under **diagonal full-information Gaussian noise** at fixed noise standard deviation σ (left → right: σ = 0.1, 0.2, 0.3). **Assumption:** curves are means over repeated runs (shaded bands).
 
-![Section 3 convergence sigma=0.1](Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p1.png)
+<table>
+  <tr>
+    <td width="33%"><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p1.png" width="100%" alt="Section 3 convergence sigma 0.1"></td>
+    <td width="33%"><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p2.png" width="100%" alt="Section 3 convergence sigma 0.2"></td>
+    <td width="34%"><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p3.png" width="100%" alt="Section 3 convergence sigma 0.3"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>σ = 0.1</b></td>
+    <td align="center"><b>σ = 0.2</b></td>
+    <td align="center"><b>σ = 0.3</b></td>
+  </tr>
+</table>
 
-**What we see:** At **low** \(\sigma\), noise-aware and original Our-Algo stay close and both beat Nash/Hedge by the end. **Why:** feedback is still fairly informative, so the extra exploration delay from the noise-aware threshold buys little; baselines suffer mainly from fixed exploration schedules relative to Our-Algo’s structure.
-
-![Section 3 convergence sigma=0.2](Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p2.png)
-
-**What we see:** At **moderate** \(\sigma\), Hedge regret pulls away upward; the two Our-Algo curves separate slightly. **Why:** noisier empirical matrices hurt Hedge more; the noise-aware variant waits longer before committing to updates based on \(\widehat{A}\), which dampens premature switches driven by sampling error.
-
-![Section 3 convergence sigma=0.3](Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p3.png)
-
-**What we see:** At **high** \(\sigma\), Hedge ends highest, Nash is poor, and **Our-Algo-NoiseAware** finishes **below** Our-Algo. **Why:** under heavy noise, trusting the empirical matrix too early is costly; scaling the delay with \(\sigma\) reduces regret from bad updates—consistent with the largest relative improvement at **`n = 100`** in the table above.
+As σ increases, Nash and especially Hedge deteriorate because they rely on noisy empirical summaries without the paper’s exploration–commit schedule. Our-Algo and Our-Algo-NoiseAware stay closer at low σ (the noise-aware delay barely differs from the baseline); they separate at moderate σ (longer delay before trusting the empirical matrix reduces switching on sampling noise); at high σ, Our-Algo-NoiseAware finishes lowest—scaling the delay with σ avoids costly early updates and matches the strongest relative gains at **`n = 100`** in the table above.
 
 ## Section 4 — bandit noise (UCB, EXP3, OurAlg)
 
@@ -159,7 +162,7 @@ Each figure has **three panels** (Adversaries 1–3): **UCB** (blue), **EXP3** (
 
 ![Section 4 convergence sigma=0.1](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p1.png)
 
-**What we see:** Mild noise: curves are smoother; ordering across algorithms **depends on the adversary** (UCB can be competitive where exploration aligns with the phase structure). **Why:** low \(\sigma\) keeps payoff estimates usable; differences are driven mainly by **adversary rules**, not noise drowning the signal.
+**What we see:** Mild noise: curves are smoother; ordering across algorithms **depends on the adversary** (UCB can be competitive where exploration aligns with the phase structure). **Why:** low σ keeps payoff estimates usable; differences are driven mainly by **adversary rules**, not noise drowning the signal.
 
 ![Section 4 convergence sigma=0.2](Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p2.png)
 
