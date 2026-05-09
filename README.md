@@ -5,7 +5,7 @@ Reproduction of the experimental setup from *On the Limitations and Possibilitie
 - Section 3 (full-information feedback): `Full_information_feedback/`
 - Section 4 (bandit feedback, 2x2): `Bandit_feedback/`
 
-**Extensions (below the reproductions):** bilateral learning (both players adapt), then noise-robustness experiments under `Extensions/`.
+**Extensions (below the reproductions):** bilateral learning (both players adapt), noise-robustness experiments under `Extensions/`, and bandit Nash regret **beyond 2×2** (empirical port to larger diagonal games).
 
 ---
 
@@ -298,3 +298,57 @@ At **low σ**, curves are relatively smooth and algorithm ranking **depends on t
 
 - **Section 3:** A noise-aware **exploration delay** improves Our-Algo under noisy full-information feedback, especially at larger `n` (see ~8% regret reduction at `n = 100`, `sigma = 0.3`).
 - **Section 4:** Same **`section4_bandit`** adversaries and two-phase protocol as the reproduction; only **Gaussian noisy** bandit observations instead of Bernoulli. We report **UCB**, **EXP3**, and **OurAlg** across **σ** with convergence curves per adversary.
+
+---
+
+# Extension: Bandit Nash regret beyond 2×2
+
+The paper proves **polylogarithmic Nash regret** for **2×2** bandit games (Theorem 6) and leaves **general \(n \times m\)** games as an **open problem** (Section 5). This extension **verbatim-ports** the authors’ reference Algorithm 6 (`ouralgo`-style loop: same two phases, same `update`/`UCB` structure) to **\(n \times n\) diagonal** games by replacing each scalar with its natural \(n\)-dimensional analogue—**no new exploration phase, no tuned constants**.
+
+**Game:** \(A_{ii} = 0.4 + 0.2 \cdot i/(n-1)\), zeros off-diagonal; **\(n \in \{2,3,4,5,7,10\}\)**. **Algorithms:** **UCB–Nash**, **EXP3**, and **OurAlg** vs a **column best-response** (mixed Nash on column indifference when applicable). **Trials:** **128** seeds per configuration (**full** run in the notebook; there is also a **quick** mode). Horizons **\(T \in \{10,\ldots,10^6\}\)**.
+
+Notebook (full experiment + derivation): [`Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb`](Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb).
+
+### Mean total Nash regret at \(T = 10^6\)
+
+Comparable horizon across board sizes (values are **means** over trials from the notebook printout).
+
+| \(n\) | UCB | EXP3 | OurAlg |
+|---:|---:|---:|---:|
+| 2 | 27.38 | 340.27 | **12.30** |
+| 3 | 37.19 | 890.49 | **21.33** |
+| 4 | 41.05 | 1557.19 | **40.47** |
+| 5 | 43.14 | 2294.43 | **98.32** |
+| 7 | 45.07 | 3882.14 | **609.88** |
+| 10 | 45.91 | 6449.91 | **6993.62** |
+
+### Log–log slopes (OurAlg vs \(T\))
+
+Between consecutive **\(T\)** decades, the notebook reports slopes of \(\log_{10}(\text{regret})\) vs \(\log_{10}(T)\). **Slope \(\approx 0.5\)** is consistent with **\(\sqrt T\)**-type growth on log–log axes; **polylog** growth would show **much smaller** slopes as \(T\) grows (flattening). Below: **maximum** slope among the five decade segments for **OurAlg** (higher \(\Rightarrow\) worse scaling in \(T\) over some window).
+
+| \(n\) | max segment slope (OurAlg) |
+|---:|---:|
+| 2 | 0.31 |
+| 3 | 0.45 |
+| 4 | 0.73 |
+| 5 | 0.73 |
+| 7 | 1.04 |
+| 10 | 1.07 |
+
+### What we take from this
+
+- **Relation to the theorem:** The **proved polylog guarantee applies to the 2×2 bandit setting**. These runs **do not** establish (or claim) the **same** guarantee for **\(n>2\)**—that regime is **explicitly open** in the paper. The notebook is **empirical evidence** about a **straight \(n \times n\) port**, not a proof.
+
+- **\(n=2\):** **OurAlg** stays **far below** **EXP3** at \(T=10^6\) and **beats UCB** in the table; **OurAlg** slopes stay **well below 0.5** across segments → consistent with the **qualitative** picture of the **2×2** theory.
+
+- **Moderate \(n\) (e.g. 3–5):** Total regret **grows with \(n\)** at fixed \(T\). **OurAlg** still **beats EXP3** strongly here, but **vs UCB** **OurAlg** is **already worse by \(n=5\)** (\(98\) vs \(43\)). **Strong relative performance vs EXP3** is **not** the same as **polylog-in-\(T\)** for fixed \(n\ge 3\): the slope table already shows **segments approaching or exceeding** the **\(\sqrt T\)** reference (**0.5**) for **\(n\ge 4\)**.
+
+- **Large \(n\) (\(7\), \(10\)):** **OurAlg** regret **explodes** relative to **\(n=2\)** and can **exceed** **EXP3** at \(n=10\) (\(\approx 6994\) vs \(\approx 6450\)) while **UCB** stays \(\sim 46\). Together with **large** slope spikes (\(\approx 1\)) for **OurAlg**, this matches **“\(n \times m\) is hard”**: the naive multidimensional extension does **not** exhibit the **same** **\(T\)**-scaling behaviour as in the **proved 2×2** regime.
+
+- **Diagnosis (see notebook §6):** On diagonal games, the conditioning quantity **\(D\)** used in the step **shrinks** as \(n\) grows; bandit **coverage** of \(n^2\) entries in Phase 1 also **degrades**. Those mechanisms are **orthogonal** to “the formulas extend”—they explain **why** an **open problem** remains open.
+
+Run the notebook to regenerate figures (`extension_nm_results.png` if you execute the plotting cell) or switch **`QUICK_MODE`** for shorter jobs.
+
+## Extension conclusion (beyond 2×2)
+
+- **Takeaway:** **Verbatim** lift of Algorithm 6 to **\(n \times n\)** diagonal bandits: **good empirical match** to the **intended 2×2** behaviour at **\(n=2\)**, **gradual degradation** for **moderate \(n\)**, **clear failure mode** at **large \(n\)** on this game class—**aligned with Section 5** (no general theorem claimed).
