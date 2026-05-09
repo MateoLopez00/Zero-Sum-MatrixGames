@@ -145,7 +145,13 @@ As σ increases, Nash and especially Hedge deteriorate because they rely on nois
 
 ## Section 4 — bandit noise (UCB, EXP3, OurAlg)
 
-We compare only the **original** bandit **OurAlg** from the paper with **UCB** and **EXP3**. Gaussian noise at the observed cell changes regret ordering relative to the noiseless Figure 2 experiment; **OurAlg** stays strongest **against Adversary 3**, where UCB and EXP3 accumulate large regret under noisy feedback.
+**Relationship to the Section 4 reproduction (Figure 2, earlier in this README):**
+
+- **Same game:** the `2×2` matrix `A`, Nash value `V*`, and **two phases of `T/2` rounds** each (Phase 1: adversary-specific column play; Phase 2: **pure best-response** for every adversary type—so a **jump near `T / 2`** is structural, not an artifact of the extension).
+- **Same three adversaries:** they are the **same column-player rules** as in **`Bandit_feedback/section4_bandit.py`**—implemented via the same **`advnew_batch` / `adv22gd_batch`** logic as the baseline runs (**Adversary 1** threshold best-response, **Adversary 2** tolerance band, **Adversary 3** fixed Nash mix \((1/3, 2/3)\) in Phase 1). The extension lives in `Extensions/Extension_Noise_Robustness_Bandit_feedback/` but **imports that module**; we do **not** introduce new opponents.
+- **Only the observation model changes:** in the reproduction above, each round observes a **Bernoulli** outcome at the played cell (probability `A[i,j]`). Here we observe **`clip(A[i,j] + sigma * N(0,1), 0, 1)`** at the played cell (Gaussian noise, then clip). Because feedback is noisier and biased when clipped, **regret curves need not match Figure 2** in ordering or magnitude; differences are **expected** and do **not** contradict the noiseless experiment—they answer a different question (“what if bandit feedback is Gaussian-noisy?”).
+
+We compare **UCB**, **EXP3**, and **OurAlg** only. With noisy observations, ranking across algorithms **varies with σ and adversary**; in our **`medium`** runs, **OurAlg** stays far below UCB/EXP3 **on Adversary 3** at high σ when UCB/EXP3 spike after the phase switch.
 
 ### Final Nash regret at `sigma = 0.3` (`medium`, seed 42)
 
@@ -157,7 +163,7 @@ We compare only the **original** bandit **OurAlg** from the paper with **UCB** a
 
 ### Convergence
 
-**Setup:** Each figure has **three panels** (Adversaries 1–3): **UCB** (blue), **EXP3** (green), **OurAlg** (orange). Same two-phase protocol as the base Section 4 experiment—Phase 1 adversary-specific, Phase 2 pure best-response—so a **jump near `T / 2`** is expected when the column rule changes. Three stacked plots below use **σ = 0.1**, then **0.2**, then **0.3**. **Assumption:** Gaussian noise only on the **observed** bandit reward; regret is Nash regret vs the game value.
+**Plot setup:** Each figure has **three panels** (Adversaries 1–3): **UCB** (blue), **EXP3** (green), **OurAlg** (orange)—same adversary index as in Figure 2 and `section4_bandit.py`. Three stacked plots below sweep **σ = 0.1**, then **0.2**, then **0.3**. **Assumption:** Gaussian noise only on the **observed** cell reward (then clip); regret is cumulative Nash regret vs the game value `V*` (same target as the baseline code).
 
 <table>
   <tr>
@@ -176,4 +182,4 @@ At **low σ**, curves are relatively smooth and algorithm ranking **depends on t
 ## Extension conclusion
 
 - **Section 3:** A noise-aware **exploration delay** improves Our-Algo under noisy full-information feedback, especially at larger `n` (see ~8% regret reduction at `n = 100`, `sigma = 0.3`).
-- **Section 4:** The paper’s bandit OurAlg already uses optimism/confidence in the design; we report **UCB**, **EXP3**, and **OurAlg** under Gaussian bandit noise across **`sigma`**, with convergence curves showing how regret accumulates over time for each adversary.
+- **Section 4:** Same **`section4_bandit`** adversaries and two-phase protocol as the reproduction; only **Gaussian noisy** bandit observations instead of Bernoulli. We report **UCB**, **EXP3**, and **OurAlg** across **σ** with convergence curves per adversary.
