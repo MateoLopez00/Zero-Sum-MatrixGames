@@ -303,17 +303,28 @@ At **low σ**, curves are relatively smooth and algorithm ranking **depends on t
 
 # Extension: Bandit Nash regret beyond 2×2
 
-The paper proves **polylogarithmic Nash regret** for **2×2** bandit games (Theorem 6) and leaves **general** $n \times m$ games as an **open problem** (Section 5). This extension **verbatim-ports** the authors’ reference Algorithm 6 (`ouralgo`-style loop: same two phases, same `update`/`UCB` structure) to $n \times n$ **diagonal** games by replacing each scalar with its natural $n$-dimensional analogue—**no new exploration phase, no tuned constants**.
+### Why this extension exists
 
-**Game:** $A_{ii} = 0.4 + 0.2 \cdot i/(n-1)$, zeros off-diagonal; **$n \in \{2,3,4,5,7,10\}$**. **Algorithms:** **UCB–Nash**, **EXP3**, and **OurAlg** vs a **column best-response** (mixed Nash on column indifference when applicable). **Trials:** **128** seeds per configuration (**full** run in the notebook; there is also a **quick** mode). Horizons **$T \in \{10,\ldots,10^6\}$**.
+The paper **proves** strong regret guarantees for the **2×2** bandit setting only. For **larger** matrix games it states an **open problem**—we do not yet have the same theory there.
 
-Notebook (full experiment + derivation): [`Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb`](Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb).
+This notebook asks a simple empirical question: **If we take the authors’ reference implementation of Algorithm 6 and scale it up to larger diagonal boards—without inventing new tricks—what happens in practice?**  
+That answers **“does the *algorithm behaviour* we see at 2×2 stay intact when $n$ grows?”**, not “prove new theorems.”
 
-### Mean total Nash regret at $T = 10^6$
+### What was run (plain summary)
 
-Comparable horizon across board sizes (values are **means** over trials from the notebook printout).
+- **Games:** $n \times n$ **diagonal** matrices (only diagonal entries nonzero), growing board sizes $n \in \{2,3,4,5,7,10\}$.
+- **Methods:** **UCB**, **EXP3**, and **OurAlg** (the paper’s algorithm). The **column** side plays a **best response** to the row’s mixed strategy (same spirit as the Section 4 reproduction).
+- **Computational note:** **128** random trials per setting in the full notebook run; horizons run from **$10$** up to **$10^6$**. There is a **quick** mode for shorter jobs.
 
-| $n$ | UCB | EXP3 | OurAlg |
+Full code, plots, and technical discussion: [`Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb`](Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb).
+
+---
+
+### Main numbers: total regret at the longest horizon
+
+Below: **average total Nash regret** after **$T = 10^6$** rounds (same long horizon for every $n$, so you can compare across board sizes). **Lower is better.**
+
+| Board size $n$ | UCB | EXP3 | OurAlg |
 |---:|---:|---:|---:|
 | 2 | 27.38 | 340.27 | **12.30** |
 | 3 | 37.19 | 890.49 | **21.33** |
@@ -322,11 +333,20 @@ Comparable horizon across board sizes (values are **means** over trials from the
 | 7 | 45.07 | 3882.14 | **609.88** |
 | 10 | 45.91 | 6449.91 | **6993.62** |
 
-### Log–log slopes (OurAlg vs $T$)
+**How to read this quickly**
 
-Between consecutive $T$ decades, the notebook reports slopes of $\log_{10}(\mathrm{regret})$ vs $\log_{10}(T)$. **Slope $\approx 0.5$** is consistent with **$\sqrt{T}$**-type growth on log–log axes; **polylog** growth would show **much smaller** slopes as $T$ grows (flattening). Below: **maximum** slope among the five decade segments for **OurAlg** (higher $\Rightarrow$ worse scaling in $T$ over some window).
+- At **$n = 2$**, **OurAlg** is clearly **strongest** in this table (much lower regret than **EXP3**, better than **UCB** here)—consistent with the paper’s focus on the **2×2** case.
+- As **$n$ increases**, **OurAlg**’s regret **rises sharply**. By **$n = 5$**, **OurAlg** is **already worse than UCB**. By **$n = 10$**, **OurAlg** is **the worst of the three** on these runs—even slightly above **EXP3**.
 
-| $n$ | max segment slope (OurAlg) |
+So: **scaling the reference algorithm to bigger boards does *not* preserve the “win against simple baselines” story**—it breaks down as $n$ grows.
+
+---
+
+### Extra summary table (optional detail)
+
+The notebook also computes **how steeply regret grows with $T$** on log–log axes for **OurAlg** (roughly: growth like $\sqrt{T}$ corresponds to slope $\approx 0.5$). **Larger worst-case slopes for larger $n$** mean **worse scaling** in practice:
+
+| $n$ | Worst segment slope (OurAlg) |
 |---:|---:|
 | 2 | 0.31 |
 | 3 | 0.45 |
@@ -335,20 +355,20 @@ Between consecutive $T$ decades, the notebook reports slopes of $\log_{10}(\math
 | 7 | 1.04 |
 | 10 | 1.07 |
 
-### What we take from this
+You do **not** need this table to grasp the story—the regret table above is enough.
 
-- **Relation to the theorem:** The **proved polylog guarantee applies to the 2×2 bandit setting**. These runs **do not** establish (or claim) the **same** guarantee for **$n>2$**—that regime is **explicitly open** in the paper. The notebook is **empirical evidence** about a **straight** $n \times n$ **port**, not a proof.
+---
 
-- **$n=2$:** **OurAlg** stays **far below** **EXP3** at $T=10^6$ and **beats UCB** in the table; **OurAlg** slopes stay **well below 0.5** across segments → consistent with the **qualitative** picture of the **2×2** theory.
+### What we conclude (in plain terms)
 
-- **Moderate $n$ (e.g. 3–5):** Total regret **grows with $n$** at fixed $T$. **OurAlg** still **beats EXP3** strongly here, but **vs UCB** **OurAlg** is **already worse by $n=5$** ($98$ vs $43$). **Strong relative performance vs EXP3** is **not** the same as **polylog-in-$T$** for fixed $n \geq 3$: the slope table already shows **segments approaching or exceeding** the **$\sqrt{T}$** reference (**0.5**) for **$n \geq 4$**.
+1. **This does not contradict the paper.** The paper **never claimed** the **same guarantee** for arbitrary board size; **Section 5** says larger games are **open**. These experiments illustrate **why** that gap matters on a **concrete diagonal family**.
 
-- **Large $n$ ($7$, $10$):** **OurAlg** regret **explodes** relative to **$n=2$** and can **exceed** **EXP3** at $n=10$ ($\approx 6994$ vs $\approx 6450$) while **UCB** stays $\sim 46$. Together with **large** slope spikes ($\approx 1$) for **OurAlg**, this matches **“$n \times m$ is hard”**: the naive multidimensional extension does **not** exhibit the **same** $T$-scaling behaviour as in the **proved 2×2** regime.
+2. **Purpose for a reader / lecturer:** We **stress-test** the **reference algorithm** beyond **2×2**. **Qualitative takeaway:** behaviour can look reasonable for **small** $n$, then **deteriorate** as the board grows—so **“lift the 2×2 code to $n \times n$”** is **not** automatically safe without new ideas.
 
-- **Diagnosis (see notebook §6):** On diagonal games, the conditioning quantity **$D$** used in the step **shrinks** as $n$ grows; bandit **coverage** of $n^2$ entries in Phase 1 also **degrades**. Those mechanisms are **orthogonal** to “the formulas extend”—they explain **why** an **open problem** remains open.
+3. **Intuition (details in the notebook):** With more rows and columns, **each matrix entry is observed rarely**, and quantities inside the update can become **ill-conditioned**. That is **informal explanation**, not a replacement for the paper’s open problem.
 
-Run the notebook to regenerate figures (`extension_nm_results.png` if you execute the plotting cell) or switch **`QUICK_MODE`** for shorter jobs.
+To regenerate plots or shorten runtime, open the notebook and run cells (or enable **`QUICK_MODE`**).
 
 ## Extension conclusion (beyond 2×2)
 
-- **Takeaway:** **Verbatim** lift of Algorithm 6 to $n \times n$ diagonal bandits: **good empirical match** to the **intended 2×2** behaviour at **$n=2$**, **gradual degradation** for **moderate $n$**, **clear failure mode** at **large $n$** on this game class—**aligned with Section 5** (no general theorem claimed).
+**One sentence:** We scaled the paper’s **bandit Algorithm 6** to **larger diagonal games**; at **2×2** it still looks like the intended reference behaviour, but **regret worsens quickly as $n$ grows**, which matches the paper framing that **general-size guarantees are still open**.
