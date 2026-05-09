@@ -303,26 +303,25 @@ At **low σ**, curves are relatively smooth and algorithm ranking **depends on t
 
 # Extension: Bandit Nash regret beyond 2×2
 
-### Why this extension exists
+### Motivation
 
-The paper **proves** strong regret guarantees for the **2×2** bandit setting only. For **larger** matrix games it states an **open problem**—we do not yet have the same theory there.
+Theoretical guarantees in the paper target the **2×2** bandit setting; **general** matrix dimensions are left as an **open problem** (Section 5).
 
-This notebook asks a simple empirical question: **If we take the authors’ reference implementation of Algorithm 6 and scale it up to larger diagonal boards—without inventing new tricks—what happens in practice?**  
-That answers **“does the *algorithm behaviour* we see at 2×2 stay intact when $n$ grows?”**, not “prove new theorems.”
+The notebook implements an empirical study: the authors’ **reference Algorithm 6** is applied to **$n \times n$** diagonal games **without** additional algorithmic modifications, in order to characterize regret as the board size **$n$** increases.
 
-### What was run (plain summary)
+### Experimental setup
 
-- **Games:** $n \times n$ **diagonal** matrices (only diagonal entries nonzero), growing board sizes $n \in \{2,3,4,5,7,10\}$.
-- **Methods:** **UCB**, **EXP3**, and **OurAlg** (the paper’s algorithm). The **column** side plays a **best response** to the row’s mixed strategy (same spirit as the Section 4 reproduction).
-- **Computational note:** **128** random trials per setting in the full notebook run; horizons run from **$10$** up to **$10^6$**. There is a **quick** mode for shorter jobs.
+- **Payoffs:** $n \times n$ **diagonal** games with $n \in \{2,3,4,5,7,10\}$.
+- **Algorithms:** **UCB**, **EXP3**, and **OurAlg**; the column player follows a **best response** to the row mixture (consistent with the Section 4 reproduction setting).
+- **Statistics:** **128** independent trials per configuration; horizons from **$10$** to **$10^6$**. A reduced-cost **`QUICK_MODE`** is available in the notebook.
 
-Full code, plots, and technical discussion: [`Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb`](Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb).
+Implementation, figures, and derivations: [`Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb`](Extensions/Extension_Bandit_Nash_Regret_Beyond2x2/section4_extension_nm.ipynb).
 
 ---
 
-### Main numbers: total regret at the longest horizon
+### Mean total Nash regret at $T = 10^6$
 
-Below: **average total Nash regret** after **$T = 10^6$** rounds (same long horizon for every $n$, so you can compare across board sizes). **Lower is better.**
+The following table reports **mean total Nash regret** after **$T = 10^6$** rounds. The horizon is held fixed across **$n$** so that regret remains comparable across board sizes. **Smaller values indicate lower regret.**
 
 | Board size $n$ | UCB | EXP3 | OurAlg |
 |---:|---:|---:|---:|
@@ -333,20 +332,15 @@ Below: **average total Nash regret** after **$T = 10^6$** rounds (same long hori
 | 7 | 45.07 | 3882.14 | **609.88** |
 | 10 | 45.91 | 6449.91 | **6993.62** |
 
-**How to read this quickly**
-
-- At **$n = 2$**, **OurAlg** is clearly **strongest** in this table (much lower regret than **EXP3**, better than **UCB** here)—consistent with the paper’s focus on the **2×2** case.
-- As **$n$ increases**, **OurAlg**’s regret **rises sharply**. By **$n = 5$**, **OurAlg** is **already worse than UCB**. By **$n = 10$**, **OurAlg** is **the worst of the three** on these runs—even slightly above **EXP3**.
-
-So: **scaling the reference algorithm to bigger boards does *not* preserve the “win against simple baselines” story**—it breaks down as $n$ grows.
+**Summary.** At **$n = 2$**, **OurAlg** attains the lowest regret in this table and substantially outperforms **EXP3**; it also remains below **UCB** at this horizon. As **$n$** increases, **OurAlg**’s regret rises; by **$n = 5$** it exceeds **UCB**, and at **$n = 10$** it exceeds **both** baselines on these runs. Thus the relative ranking observed at **$n = 2$** is **not** maintained when the reference construction is extended to larger diagonal games.
 
 ---
 
-### Extra summary table (optional detail)
+### Log–log slope statistics (OurAlg)
 
-The notebook also computes **how steeply regret grows with $T$** on log–log axes for **OurAlg** (roughly: growth like $\sqrt{T}$ corresponds to slope $\approx 0.5$). **Larger worst-case slopes for larger $n$** mean **worse scaling** in practice:
+The notebook estimates slopes of $\log_{10}(\mathrm{regret})$ versus $\log_{10}(T)$ between successive decades of **$T$**. For reference, slope **$\approx 0.5$** is consistent with regret growth on the order of **$\sqrt{T}$** on log–log axes. The **maximum** slope across segments is reported below as a coarse indicator of worst-case scaling over the run.
 
-| $n$ | Worst segment slope (OurAlg) |
+| $n$ | Max. segment slope (OurAlg) |
 |---:|---:|
 | 2 | 0.31 |
 | 3 | 0.45 |
@@ -355,20 +349,20 @@ The notebook also computes **how steeply regret grows with $T$** on log–log ax
 | 7 | 1.04 |
 | 10 | 1.07 |
 
-You do **not** need this table to grasp the story—the regret table above is enough.
+The primary empirical conclusion follows from the **regret table**; this slope summary is **supplementary**.
 
 ---
 
-### What we conclude (in plain terms)
+### Discussion
 
-1. **This does not contradict the paper.** The paper **never claimed** the **same guarantee** for arbitrary board size; **Section 5** says larger games are **open**. These experiments illustrate **why** that gap matters on a **concrete diagonal family**.
+1. **Consistency with the paper.** The manuscript does **not** assert the **2×2** regret bound for arbitrary **$n$**; the extension therefore **does not** conflict with the stated theory. It provides **diagnostic evidence** on a specific diagonal family for why **general-size** analysis remains open.
 
-2. **Purpose for a reader / lecturer:** We **stress-test** the **reference algorithm** beyond **2×2**. **Qualitative takeaway:** behaviour can look reasonable for **small** $n$, then **deteriorate** as the board grows—so **“lift the 2×2 code to $n \times n$”** is **not** automatically safe without new ideas.
+2. **Scope of the extension.** The experiment evaluates the **reference implementation** outside the proved **2×2** regime. Empirically, performance degrades as **$n$** grows; extending the **2×2** reference code to **$n \times n$** without further design changes is **not** sufficient to retain the advantages observed at **$n = 2$**.
 
-3. **Intuition (details in the notebook):** With more rows and columns, **each matrix entry is observed rarely**, and quantities inside the update can become **ill-conditioned**. That is **informal explanation**, not a replacement for the paper’s open problem.
+3. **Informal mechanism.** As **$n$** increases, individual matrix entries receive fewer bandit observations per unit time, and the update can become **ill-conditioned**; see the notebook for a detailed discussion.
 
-To regenerate plots or shorten runtime, open the notebook and run cells (or enable **`QUICK_MODE`**).
+Plots may be regenerated by executing the notebook; runtime may be reduced via **`QUICK_MODE`**.
 
 ## Extension conclusion (beyond 2×2)
 
-**One sentence:** We scaled the paper’s **bandit Algorithm 6** to **larger diagonal games**; at **2×2** it still looks like the intended reference behaviour, but **regret worsens quickly as $n$ grows**, which matches the paper framing that **general-size guarantees are still open**.
+Algorithm 6 is evaluated on **larger diagonal bandit games**; behaviour remains favourable at **$n = 2$**, whereas regret **deteriorates markedly** as **$n$** increases, in line with the paper’s indication that **general-size guarantees** require further theory.
