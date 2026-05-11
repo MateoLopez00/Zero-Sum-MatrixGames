@@ -24,11 +24,11 @@ pip install -r requirements.txt
 
 ## Section 3 plots
 
-**Nash regret cumulative curves:** [`Full_information_feedback/Nash_regret_curve_section3/section3_nashregret_curves.ipynb`](Full_information_feedback/Nash_regret_curve_section3/section3_nashregret_curves.ipynb) — **2×2 panels** ($n \in \{10,20,50,100\}$): $\log_{10}$ cumulative Nash regret vs round $t$ for Nash, Hedge, and Our-Algo. The plot below was generated with `RUN_MODE=HEAVY` (`T=30000`, 6 seeds).
+**Nash regret cumulative curves:** [`Full_information_feedback/Nash_regret_curve_section3/section3_nashregret_curves.ipynb`](Full_information_feedback/Nash_regret_curve_section3/section3_nashregret_curves.ipynb) — **2×2 panels** ($n \in \{10,20,50,100\}$): $\log_{10}$ cumulative Nash regret vs round $t$ for Nash, Hedge, and Our-Algo. The plot below was generated with `RUN_MODE=HEAVY` (`T=100000`, 6 seeds).
 
-![Section 3 cumulative Nash regret curves](Full_information_feedback/Nash_regret_curve_section3/plots/section3_cumulative_nashregret_heavy_T30000.png)
+![Section 3 cumulative Nash regret curves](Full_information_feedback/Nash_regret_curve_section3/plots/section3_cumulative_nashregret_heavy_T100000.png)
 
-The cumulative trajectories show the same qualitative trend as the terminal-regret reproduction while exposing the time evolution directly. Nash has the steepest long-run growth in the smaller diagonal games, Our-Algo rises quickly and then flattens, and Hedge is competitive with a smoother growth profile. As `n` increases, the curves move closer together; at `n=100`, the finite-horizon ordering is tight, which is consistent with the stronger `n`-dependence in the full-information theory and with the official Section 3 regret accounting used for Our-Algo.
+The cumulative trajectories show the same qualitative trend as the terminal-regret reproduction while exposing the time evolution directly. For `n=10` and `n=20`, Our-Algo rises early and then flattens, while Nash keeps the steepest long-run growth and Hedge continues to accumulate regret more steadily. For `n=50` and `n=100`, the curves move closer together and the finite-horizon ordering becomes less uniform: Hedge is competitive, Nash remains high, and Our-Algo stays relatively flat after its initial exploration cost. This is consistent with the stronger `n`-dependence in the full-information theory and with the official Section 3 regret accounting used for Our-Algo.
 
 The four paper-style terminal-regret plots below were generated with `Full_information_feedback/experiments_section3.py` using the `paper-lite` preset and the `official` variant for `n_actions = 10, 20, 50, 100`.
 
@@ -88,13 +88,13 @@ The plot shows `log(total Nash regret)` vs `log(T)` for each adversary. The clai
 
 The original Figure 2 below was reproduced with `Bandit_feedback/section4_reproduction.ipynb`. The same experiment is also available in `Bandit_feedback/section4_bandit.py`.
 
-**Nash regret cumulative curves:** [`Bandit_feedback/Nash_regret_curve_section4/section4_nashregret_curves.ipynb`](Bandit_feedback/Nash_regret_curve_section4/section4_nashregret_curves.ipynb) — **three panels** (adversaries 1–3): $\log_{10}$ cumulative Nash regret vs round $t$ for UCB, EXP3, and OurAlg; the dashed vertical line marks the phase switch at $T/2$. The plot below was generated with `RUN_MODE=HEAVY` (`T=50000`, 32 seeds).
+**Nash regret cumulative curves:** [`Bandit_feedback/Nash_regret_curve_section4/section4_nashregret_curves.ipynb`](Bandit_feedback/Nash_regret_curve_section4/section4_nashregret_curves.ipynb) — **three panels** (adversaries 1–3): $\log_{10}$ cumulative Nash regret vs round $t$ for UCB, EXP3, and OurAlg; the dashed vertical line marks the phase switch at $T/2$. The plot below was generated with `RUN_MODE=HEAVY` (`T=100000`, 32 seeds).
 
-![Section 4 cumulative Nash regret curves](Bandit_feedback/Nash_regret_curve_section4/plots/section4_cumulative_nashregret_heavy_T50000.png)
+![Section 4 cumulative Nash regret curves](Bandit_feedback/Nash_regret_curve_section4/plots/section4_cumulative_nashregret_heavy_T100000.png)
 
-The cumulative trajectories make the two-phase structure visible. Against Adversaries 1 and 2, UCB remains competitive while EXP3 continues to grow and OurAlg quickly plateaus at a moderate regret level. Against Adversary 3, all methods have negligible regret in Phase 1 because the column plays Nash, then the $T/2$ switch sharply separates the methods: UCB and EXP3 jump to much larger regret, while OurAlg stays far lower and grows slowly. This is the clearest cumulative-curve version of the Section 4 claim.
+The cumulative trajectories make the two-phase structure visible. Against Adversary 1, UCB stays lowest, OurAlg plateaus at a moderate level after its initial exploration, and EXP3 keeps growing. Against Adversary 2, UCB and OurAlg both flatten after the first part of the run while EXP3 remains the highest-regret baseline. Against Adversary 3, all methods have negligible regret in Phase 1 because the column plays Nash, then the $T/2$ switch sharply separates the methods: UCB and EXP3 jump to much larger regret, while OurAlg stays far lower and grows slowly. This is the clearest cumulative-curve version of the Section 4 claim.
 
-Across all three adversaries, Our-Algo is especially robust to the phase switch, most dramatically against Adversary 3, matching the paper's core claim.
+The robustness claim is clearest in the phase-switch setting, most dramatically against Adversary 3, where OurAlg remains far below the generic bandit baselines after the adversary changes behavior.
 
 ![Section 4 Figure 2](Bandit_feedback/section4_fig2.png)
 
@@ -231,7 +231,7 @@ Code and notebooks:
 - `Extensions/Extension_Noise_Robustness_Full_info_feedback/section3_noise_robustness.py` and `section3_noise_robustness.ipynb`
 - `Extensions/Extension_Noise_Robustness_Bandit_feedback/section4_noise_robustness.py` and `section4_noise_robustness.ipynb`
 
-Figures below use the **`medium`** preset (`T = 30_000` for Section 3 convergence; `T = 100_000` for Section 4 convergence), multi-sigma convergence runs at **`sigma` ∈ {0.1, 0.2, 0.3}**, and seed **`7`** (Section 3) / **`42`** (Section 4) unless you change them in the notebooks.
+Figures below use the **`paper-lite`** preset (`T = 100_000` for both Section 3 and Section 4 convergence), multi-sigma convergence runs at **`sigma` ∈ {0.1, 0.2, 0.3}**, and seed **`7`** (Section 3) / **`42`** (Section 4) unless you change them in the notebooks.
 
 ## Section 3 — noise-aware threshold (full information)
 
@@ -243,14 +243,14 @@ threshold = min((1 + 2 * sigma) * log(T)**2, sqrt(T))
 
 compared to the original `threshold = min(log(T)**2, sqrt(T))`.
 
-### Summary at `sigma = 0.3` (noise sweep, `medium`)
+### Summary at `sigma = 0.3` (noise sweep, `paper-lite`)
 
 | n | Nash regret | Hedge regret | Our-Algo regret | Our-Algo-NoiseAware regret | Reduction vs Our-Algo |
 |---:|---:|---:|---:|---:|---:|
-| 10 | 35.56 | 8.96 | 5.96 | 5.90 | 0.9% |
-| 20 | 21.26 | 8.57 | 4.91 | 4.73 | 3.6% |
-| 50 | 8.71 | 8.41 | 4.07 | 3.84 | 5.8% |
-| 100 | 4.68 | 8.46 | 3.85 | 3.55 | 8.0% |
+| 10 | 113.08 | 16.30 | 8.54 | 8.25 | 3.4% |
+| 20 | 58.66 | 15.48 | 6.36 | 6.08 | 4.4% |
+| 50 | 24.41 | 15.33 | 5.02 | 4.78 | 4.8% |
+| 100 | 12.99 | 15.75 | 4.58 | 4.30 | 6.1% |
 
 ### Convergence (`n = 100`)
 
@@ -258,17 +258,17 @@ compared to the original `threshold = min(log(T)**2, sqrt(T))`.
 
 <table>
   <tr>
-    <td align="center"><b>σ = 0.1</b><br><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p1.png" width="100%" alt="Section 3 convergence sigma 0.1"></td>
+    <td align="center"><b>σ = 0.1</b><br><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_paper-lite_n100_sigma0p1.png" width="100%" alt="Section 3 convergence sigma 0.1"></td>
   </tr>
   <tr>
-    <td align="center"><b>σ = 0.2</b><br><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p2.png" width="100%" alt="Section 3 convergence sigma 0.2"></td>
+    <td align="center"><b>σ = 0.2</b><br><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_paper-lite_n100_sigma0p2.png" width="100%" alt="Section 3 convergence sigma 0.2"></td>
   </tr>
   <tr>
-    <td align="center"><b>σ = 0.3</b><br><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_medium_n100_sigma0p3.png" width="100%" alt="Section 3 convergence sigma 0.3"></td>
+    <td align="center"><b>σ = 0.3</b><br><img src="Extensions/Extension_Noise_Robustness_Full_info_feedback/plots/section3_convergence_paper-lite_n100_sigma0p3.png" width="100%" alt="Section 3 convergence sigma 0.3"></td>
   </tr>
 </table>
 
-As σ increases, Nash and especially Hedge deteriorate because they rely on noisy empirical summaries without the paper’s exploration–commit schedule. Our-Algo and Our-Algo-NoiseAware stay closer at low σ (the noise-aware delay barely differs from the baseline); they separate at moderate σ (longer delay before trusting the empirical matrix reduces switching on sampling noise); at high σ, Our-Algo-NoiseAware finishes lowest—scaling the delay with σ avoids costly early updates and matches the strongest relative gains at **`n = 100`** in the table above.
+As σ increases, Nash and Hedge deteriorate because they rely on noisy empirical summaries without the paper’s exploration–commit schedule. At `n=100`, low noise still favors Nash in terminal cumulative regret, but Our-Algo and Our-Algo-NoiseAware become much more stable as σ grows. By σ = 0.3, the two Our-Algo variants flatten while Nash and Hedge keep rising, and the noise-aware threshold finishes lowest. Scaling the delay with σ therefore matters most in the noisier regime, where it avoids committing too early to a matrix estimate distorted by Gaussian feedback.
 
 ## Section 4 — bandit noise (UCB, EXP3, OurAlg)
 
@@ -278,15 +278,15 @@ As σ increases, Nash and especially Hedge deteriorate because they rely on nois
 - **Same three adversaries:** they are the **same column-player rules** as in **`Bandit_feedback/section4_bandit.py`**—implemented via the same **`advnew_batch` / `adv22gd_batch`** logic as the baseline runs (**Adversary 1** threshold best-response, **Adversary 2** tolerance band, **Adversary 3** fixed Nash mix $(1/3,\,2/3)$ in Phase 1). The extension lives in `Extensions/Extension_Noise_Robustness_Bandit_feedback/` but **imports that module**; we do **not** introduce new opponents.
 - **Only the observation model changes:** in the reproduction above, each round observes a **Bernoulli** outcome at the played cell (probability `A[i,j]`). Here we observe **`clip(A[i,j] + sigma * N(0,1), 0, 1)`** at the played cell (Gaussian noise, then clip). Because feedback is noisier and biased when clipped, **regret curves need not match Figure 2** in ordering or magnitude; differences are **expected** and do **not** contradict the noiseless experiment—they answer a different question (“what if bandit feedback is Gaussian-noisy?”).
 
-We compare **UCB**, **EXP3**, and **OurAlg** only. With noisy observations, ranking across algorithms **varies with σ and adversary**; in our **`medium`** runs, **OurAlg** stays far below UCB/EXP3 **on Adversary 3** at high σ when UCB/EXP3 spike after the phase switch.
+We compare **UCB**, **EXP3**, and **OurAlg** only. With noisy observations, ranking across algorithms **varies with σ and adversary**; in our **`paper-lite`** runs, **OurAlg** stays far below UCB/EXP3 **on Adversary 3** at high σ when UCB/EXP3 spike after the phase switch.
 
-### Final Nash regret at `sigma = 0.3` (`medium`, seed 42)
+### Final Nash regret at `sigma = 0.3` (`paper-lite`, seed 42)
 
 | Adversary | UCB regret | EXP3 regret | OurAlg regret |
 |---:|---:|---:|---:|
-| 1 | 8.27 | 142.42 | 73.58 |
-| 2 | 58.50 | 139.81 | 89.23 |
-| 3 | 773.81 | 1265.62 | 2.81 |
+| 1 | 7.53 | 141.27 | 77.90 |
+| 2 | 59.01 | 140.74 | 86.07 |
+| 3 | 778.26 | 703.05 | 2.86 |
 
 ### Convergence
 
@@ -294,21 +294,21 @@ We compare **UCB**, **EXP3**, and **OurAlg** only. With noisy observations, rank
 
 <table>
   <tr>
-    <td align="center"><b>σ = 0.1</b><br><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p1.png" width="100%" alt="Section 4 convergence sigma 0.1"></td>
+    <td align="center"><b>σ = 0.1</b><br><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_paper-lite_sigma0p1.png" width="100%" alt="Section 4 convergence sigma 0.1"></td>
   </tr>
   <tr>
-    <td align="center"><b>σ = 0.2</b><br><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p2.png" width="100%" alt="Section 4 convergence sigma 0.2"></td>
+    <td align="center"><b>σ = 0.2</b><br><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_paper-lite_sigma0p2.png" width="100%" alt="Section 4 convergence sigma 0.2"></td>
   </tr>
   <tr>
-    <td align="center"><b>σ = 0.3</b><br><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_medium_sigma0p3.png" width="100%" alt="Section 4 convergence sigma 0.3"></td>
+    <td align="center"><b>σ = 0.3</b><br><img src="Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/section4_convergence_paper-lite_sigma0p3.png" width="100%" alt="Section 4 convergence sigma 0.3"></td>
   </tr>
 </table>
 
-At **low σ**, curves are relatively smooth and algorithm ranking **depends on the adversary**—noise is mild enough that UCB can still be competitive where its exploration matches the phase schedule; differences are mostly **adversary-driven**. As σ rises to **moderate**, cumulative regret moves up and spreads across methods because optimistic indices and sampling interact with **noisy cell observations**, so mistakes linger in UCB/EXP3’s statistics. At **high σ**, especially on **Adversary 3**, UCB and EXP3 blow up after the phase switch while **OurAlg** stays comparatively flat: Phase 1 is easy there, but after **`T / 2`** the column becomes harsh—generic bandit rules **mis-track** that shift under heavy observation noise, whereas OurAlg’s update matches the paper’s adversarial bandit construction and keeps regret growth far smaller.
+At **low σ**, curves are relatively smooth and algorithm ranking **depends on the adversary**: UCB is strongest on Adversary 1, UCB/OurAlg are closer on Adversary 2, and OurAlg is already far below the generic bandit baselines on Adversary 3. As σ rises, cumulative regret moves up and spreads across methods because optimistic indices and sampling interact with **noisy cell observations**, so mistakes linger in UCB/EXP3’s statistics. At **high σ**, especially on **Adversary 3**, UCB and EXP3 blow up after the phase switch while **OurAlg** stays comparatively flat: Phase 1 is easy there, but after **`T / 2`** the column becomes harsh—generic bandit rules **mis-track** that shift under heavy observation noise, whereas OurAlg’s update matches the paper’s adversarial bandit construction and keeps regret growth far smaller.
 
 ## Extension conclusion
 
-- **Section 3:** A noise-aware **exploration delay** improves Our-Algo under noisy full-information feedback, especially at larger `n` (see ~8% regret reduction at `n = 100`, `sigma = 0.3`).
+- **Section 3:** A noise-aware **exploration delay** improves Our-Algo under noisy full-information feedback, especially in the high-noise regime (see ~6% regret reduction at `n = 100`, `sigma = 0.3` in the `T=100000` run).
 - **Section 4:** Same **`section4_bandit`** adversaries and two-phase protocol as the reproduction; only **Gaussian noisy** bandit observations instead of Bernoulli. We report **UCB**, **EXP3**, and **OurAlg** across **σ** with convergence curves per adversary.
 
 ---
