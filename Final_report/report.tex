@@ -17,6 +17,12 @@
 \usepackage{xcolor}
 \usepackage{environ}
 \usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[section]{placeins}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{tikz}
+\usepackage{array}
+\usepackage{url}
 
 %%% Additional commands from the template %%%
 \newcommand{\N}{\ensuremath{\mathds{N}}}
@@ -38,49 +44,81 @@
 \newtheorem{prob}{Exercise}
 \newtheorem{pcode}{Pseudocode}
 
-%%% Report-specific macros %%%
+%%% Report specific macros %%%
 \newcommand{\Reg}{\operatorname{Reg}}
 \newcommand{\Vstar}{V^\star}
 \newcommand{\OurAlg}{\textsc{OurAlg}}
 \newcommand{\NoiseAware}{\textsc{OurAlg-NoiseAware}}
 
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue
+}
+
 \title{Reproducing and Extending Nash Regret Experiments in Zero-Sum Matrix Games}
-\author{Mateo Lopez}
 \date{Spring 2026}
 
 \begin{document}
 
 %%% TITLE PAGE %%%
 \begin{titlepage}
+\newgeometry{top=1.2cm,bottom=1.2cm,left=1.7cm,right=1.7cm}
 \pagestyle{empty}
-  \begin{minipage}[t]{0.48\textwidth}
-    \begin{flushleft}
-      \includegraphics[height=1.25cm]{figures/unine_logo.png}\\[0.25cm]
-      \bf Reinforcement Learning and Decision Making Under Uncertainty
-    \end{flushleft}
-  \end{minipage}\hfill
-  \begin{minipage}[t]{0.32\textwidth}
-    \begin{flushright}
-      \includegraphics[height=1.25cm]{figures/unibe_logo.png}\\[0.25cm]
-      \bf Spring 2026\\
-      Mateo Lopez
-    \end{flushright}
-  \end{minipage}
 
-  \vspace{1.0cm}
-  \begin{center}
-    {\Large\bf Project Report}\\[1.1cm]
-    {\large Reproducing and Extending Nash Regret Experiments\\
-    in Zero-Sum Matrix Games}\\[0.9cm]
-    {\bf Based on the paper}\\[0.2cm]
-    {\it On the Limitations and Possibilities of Nash Regret Minimization\\
-    in Zero-Sum Matrix Games Under Noisy Feedback}\\[0.9cm]
-    {\bf Group Members}\\[0.3cm]
-    Mateo Lopez \quad \texttt{mateo.lopez@unine.ch}\\
-    Felix Merz \quad \texttt{felix.merz@students.unibe.ch}\\
-    Bill Chavez \quad \texttt{bill.chavezarias@students.unibe.ch}\\
-    Daksh Patel \quad \texttt{daksh.patel@students.unibe.ch}
-  \end{center}
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[gray!18] (current page.south west) rectangle (current page.north east);
+\end{tikzpicture}
+
+\vspace*{0.2cm}
+
+\begin{center}
+\begin{tabular}{>{\centering\arraybackslash}m{0.29\textwidth}
+                >{\centering\arraybackslash}m{0.29\textwidth}
+                >{\centering\arraybackslash}m{0.29\textwidth}}
+  \includegraphics[width=0.17\textwidth,keepaspectratio]{figures/unibe_logo.png} &
+  \includegraphics[width=0.20\textwidth,keepaspectratio]{figures/unifr_logo.png} &
+  \includegraphics[width=0.17\textwidth,keepaspectratio]{figures/unine_logo.png}
+\end{tabular}
+\end{center}
+
+\vspace*{4.1cm}
+
+\begin{center}
+{\Large Reproducing and Extending Nash Regret Experiments}\\[0.18cm]
+{\Large in Zero-Sum Matrix Games}\\[0.75cm]
+
+{\large Project Report}\\[0.35cm]
+
+{\normalsize Based on the paper}\\[0.18cm]
+{\itshape On the Limitations and Possibilities of Nash Regret Minimization}\\
+{\itshape in Zero-Sum Matrix Games Under Noisy Feedback}\\[0.95cm]
+
+{\large Bill Chavez}\\[-0.02cm]
+{\normalsize \texttt{bill.chavezarias@students.unibe.ch}}\\[0.36cm]
+
+{\large Mateo Lopez}\\[-0.02cm]
+{\normalsize \texttt{mateo.lopez@unine.ch}}\\[0.36cm]
+
+{\large Felix Merz}\\[-0.02cm]
+{\normalsize \texttt{felix.merz@students.unibe.ch}}\\[0.36cm]
+
+{\large Daksh Patel}\\[-0.02cm]
+{\normalsize \texttt{daksh.patel@students.unibe.ch}}\\[0.65cm]
+
+{\small \url{https://github.com/MateoLopez00/Zero-Sum-MatrixGames.git}}
+\end{center}
+
+\vfill
+
+\noindent
+\begin{tabular}{@{}p{0.34\textwidth}p{0.62\textwidth}@{}}
+\textbf{Date:} & Spring 2026 \\[0.10cm]
+\textbf{Course:} & Seminar Advanced Topics in Reinforcement Learning and Decision Making \\[0.10cm]
+\end{tabular}
+
+\restoregeometry
 \end{titlepage}
 
 \pagestyle{plain}
@@ -112,6 +150,7 @@ At round $t$, the row learner plays $x_t$ and the column player chooses $y_t$ ac
 \]
 with the sign convention used in the implementation: smaller cumulative regret indicates that the row learner remains closer to the game value.
 
+\newpage
 \subsection{Feedback models}
 
 The project uses three feedback models. In the Section 3 full-information setting, the learner observes a full payoff signal on a diagonal game with
@@ -140,14 +179,16 @@ Figure~\ref{fig:baseline} summarises the two reproduction experiments using cumu
 \begin{table}[!htbp]
   \centering
   \scriptsize
-  \begin{tabularx}{\textwidth}{p{0.20\textwidth}X p{0.22\textwidth}}
+  \setlength{\tabcolsep}{4pt}
+  \renewcommand{\arraystretch}{0.86}
+  \begin{tabularx}{\textwidth}{p{0.19\textwidth}X p{0.18\textwidth}}
     \toprule
     Experiment & Reported settings & Source \\
     \midrule
-    Section 3 reproduction & Diagonal games $n\in\{10,20,50,100\}$; cumulative Nash regret; $T=30{,}000$; six seeds; algorithms: Nash, Hedge, Our-Algo. & S3 curves \\
-    Section 4 reproduction & $2\times2$ game with $\Vstar=2/9$; adversaries 1--3; two phases of $T/2$; $T=50{,}000$; 32 seeds; algorithms: UCB, EXP3, OurAlg. & S4 curves \\
-    Section 3 noise & Full-information Gaussian-clipped feedback; $n=100$ convergence plots; $\sigma\in\{0.1,0.2,0.3\}$; $T=30{,}000$; eight runs; seed 7. & S3 noise \\
-    Section 4 noise & Same Section 4 adversaries and phases; played-cell Gaussian-clipped feedback; $\sigma\in\{0.1,0.2,0.3\}$; $T=100{,}000$; 16 runs; seed 42. & S4 noise \\
+    Section 3 reproduction & Diagonal games $n\in\{10,20,50,100\}$; cumulative Nash regret; $T=100{,}000$; six seeds; algorithms: Nash, Hedge, Our-Algo. & S3 curves \\
+    Section 4 reproduction & $2\times2$ game with $\Vstar=2/9$; adversaries 1--3; two phases of $T/2$; $T=100{,}000$; 32 seeds; algorithms: UCB, EXP3, OurAlg. & S4 curves \\
+    Section 3 noise & Full-information Gaussian-clipped feedback; $n=100$ convergence plots; $\sigma\in\{0.1,0.2,0.3\}$; $T=100{,}000$; 12 runs; seed 7. & S3 noise \\
+    Section 4 noise & Same Section 4 adversaries and phases; played-cell Gaussian-clipped feedback; $\sigma\in\{0.1,0.2,0.3\}$; $T=100{,}000$; 32 runs; seed 42. & S4 noise \\
     Bilateral learning & Both players update rather than fixing the column rule; diagonal full-information game shown at $n=20$; $2\times2$ bandit game shown with the same adversarial-column reference curves used in the Section 4 reproduction. & Bilateral \\
     Beyond $2\times2$ & Diagonal bandit games $n\in\{2,3,4,5,7,10\}$; $T$ up to $10^6$; 128 trials; algorithms: UCB, EXP3, OurAlg. & S4 larger-$n$ \\
     \bottomrule
@@ -158,21 +199,23 @@ Figure~\ref{fig:baseline} summarises the two reproduction experiments using cumu
 
 \begin{figure}[!htbp]
   \centering
-  \begin{minipage}{0.49\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/section3_baseline_cumulative_T30000.png}
-    {\small (a) Full-information diagonal games, $T=30{,}000$, six seeds.}
-  \end{minipage}\hfill
-  \begin{minipage}{0.49\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/section4_baseline_cumulative_T50000.png}
-    {\small (b) Bandit $2\times2$ game, $T=50{,}000$, 32 seeds.}
-  \end{minipage}
-  \caption{Reproduction of the main empirical trends. In (a), the proposed method rises early and then flattens, consistent with the paper's polylogarithmic-regret prediction, although the separation becomes tighter at larger $n$. In (b), the phase switch at $T/2$ is visible; against Adversary 3, UCB and EXP3 jump to much larger regret while \OurAlg{} remains substantially lower.}
+  \includegraphics[width=0.82\textwidth]{figures/section3_baseline_cumulative_T100000.png}
+
+  \vspace{0.04cm}
+  {\small (a) Section 3 full-information diagonal games.}
+
+  \vspace{0.08cm}
+
+  \includegraphics[width=0.82\textwidth]{figures/section4_baseline_cumulative_T100000.png}
+
+  \vspace{0.04cm}
+  {\small (b) Section 4 bandit adversaries.}
+
+  \caption{Reproduction cumulative Nash-regret curves at $T=100{,}000$. Panel (a) shows the Section 3 full-information diagonal games; panel (b) shows the Section 4 two-phase bandit adversaries.}
   \label{fig:baseline}
 \end{figure}
 
-The reproduction is technically consistent with the paper's assumptions. In the full-information setting, the strongest qualitative signal is not a single terminal value but the curve shape: the proposed algorithm grows quickly and then slows, whereas the baselines behave more like square-root-regret methods. In the bandit setting, the adversarial phase structure is crucial. Adversary 3 is benign in Phase 1 because it plays Nash, but the Phase 2 best response sharply separates algorithms. This matches the theoretical motivation: generic UCB and EXP3 are not designed for this adversarial game protocol, while \OurAlg{} uses the structure of the $2\times2$ matrix game.
+The reproduction is technically consistent with the paper's assumptions. In the full-information setting, the strongest qualitative signal is not a single terminal value but the curve shape: the proposed algorithm pays an early exploration cost and then slows, while the baselines keep accumulating regret more steadily, especially for smaller diagonal games. In the bandit setting, the adversarial phase structure is crucial. Adversary 3 is benign in Phase 1 because it plays Nash, but the Phase 2 best response sharply separates algorithms. This matches the theoretical motivation: generic UCB and EXP3 are not designed for this adversarial game protocol, while \OurAlg{} uses the structure of the $2\times2$ matrix game.
 
 For provenance, S3 curves are generated by the Section 3 Nash-regret curves notebook, S4 curves by the Section 4 Nash-regret curves notebook, S3/S4 noise by the two noise-robustness notebooks, S4 larger-$n$ by the beyond-$2\times2$ notebook, and bilateral learning by the two bilateral scripts. These source names are intentionally summarized here; the repository structure contains the exact files and copied figures.
 
@@ -190,7 +233,7 @@ The baselines remain unchanged. The extension modifies only the paper's algorith
   \tau_{\text{orig}}=\min\{\log^2(T),\sqrt{T}\},\qquad
   \tau_{\text{noise}}=\min\{(1+2\sigma)\log^2(T),\sqrt{T}\}.
 \]
-The experiment uses $T=30{,}000$, $n=100$ for the convergence plots, eight independent runs, seed 7, and $\sigma\in\{0.1,0.2,0.3\}$. Table~\ref{tab:s3noise} reports terminal regret at $\sigma=0.3$ over the diagonal games used in the sweep.
+The experiment uses $T=100{,}000$, $n=100$ for the convergence plots, 12 independent runs, seed 7, and $\sigma\in\{0.1,0.2,0.3\}$. Table~\ref{tab:s3noise} reports terminal regret at $\sigma=0.3$ over the diagonal games used in the sweep.
 
 \begin{table}[!htbp]
   \centering
@@ -199,41 +242,41 @@ The experiment uses $T=30{,}000$, $n=100$ for the convergence plots, eight indep
     \toprule
     $n$ & Nash & Hedge & Our-Algo & Noise-aware & Reduction \\
     \midrule
-    10 & 35.56 & 8.96 & 5.96 & 5.90 & 0.9\% \\
-    20 & 21.26 & 8.57 & 4.91 & 4.73 & 3.6\% \\
-    50 & 8.71 & 8.41 & 4.07 & 3.84 & 5.8\% \\
-    100 & 4.68 & 8.46 & 3.85 & 3.55 & 8.0\% \\
+    10 & 113.08 & 16.30 & 8.54 & 8.25 & 3.4\% \\
+    20 & 58.66 & 15.48 & 6.36 & 6.08 & 4.4\% \\
+    50 & 24.41 & 15.33 & 5.02 & 4.78 & 4.8\% \\
+    100 & 12.99 & 15.75 & 4.58 & 4.30 & 6.1\% \\
     \bottomrule
   \end{tabular}
-  \caption{Section 3 noise robustness at $\sigma=0.3$, $T=30{,}000$, eight runs. The reduction is relative to the original Our-Algo.}
+  \caption{Section 3 noise robustness at $\sigma=0.3$, $T=100{,}000$, 12 runs. The reduction is relative to the original Our-Algo.}
   \label{tab:s3noise}
 \end{table}
 
 \begin{figure}[!htbp]
   \centering
-  \begin{minipage}{0.32\textwidth}
+  \begin{minipage}{0.315\textwidth}
     \centering
     \includegraphics[width=\linewidth]{figures/section3_noise_n100_sigma0p1.png}\\
-    \small $\sigma=0.1$
+    {\small (a) $\sigma=0.1$}
   \end{minipage}\hfill
-  \begin{minipage}{0.32\textwidth}
+  \begin{minipage}{0.315\textwidth}
     \centering
     \includegraphics[width=\linewidth]{figures/section3_noise_n100_sigma0p2.png}\\
-    \small $\sigma=0.2$
+    {\small (b) $\sigma=0.2$}
   \end{minipage}\hfill
-  \begin{minipage}{0.32\textwidth}
+  \begin{minipage}{0.315\textwidth}
     \centering
     \includegraphics[width=\linewidth]{figures/section3_noise_n100_sigma0p3.png}\\
-    \small $\sigma=0.3$
+    {\small (c) $\sigma=0.3$}
   \end{minipage}
-  \caption{Section 3 noise convergence for $n=100$ and $T=30{,}000$. As $\sigma$ increases, the advantage of delaying updates becomes clearer: \NoiseAware{} finishes below the original method at high noise.}
+   \caption{Section 3 noise convergence for $n=100$ and $T=100{,}000$. The noise-aware variant becomes more useful as $\sigma$ increases.}
   \label{fig:s3noise}
 \end{figure}
 
-The result supports the intended mechanism. When $\sigma$ is small, the empirical matrix is already reliable enough that the extra delay has little effect. At higher noise, premature updates based on noisy estimates become more costly, and the noise-aware threshold reduces these updates. The improvement is moderate rather than dramatic, which is also an important caveat: the original method is already robust in this setting.
+The result supports the intended mechanism. When $\sigma$ is small, the empirical matrix is reliable enough that the extra delay has little effect, and Nash can still be competitive at $n=100$. At higher noise, premature updates based on noisy estimates become more costly, while the two proposed variants flatten relative to Nash and Hedge. The improvement from the noise-aware threshold is moderate rather than dramatic, which is also an important caveat: the original method is already robust in this setting.
 
 \paragraph{Bandit noise with the same adversaries.}
-For Section 4, we do not introduce a noise-aware bandit variant in the final comparison. The adversaries and two-phase protocol are exactly the same as in the reproduction: the extension imports the same adversary logic from \texttt{section4\_bandit.py}. The only change is the feedback distribution, from Bernoulli observations to clipped Gaussian played-cell observations. The reported runs use $T=100{,}000$, 16 independent runs, seed 42, and $\sigma\in\{0.1,0.2,0.3\}$.
+For Section 4, we do not introduce a noise-aware bandit variant in the final comparison. The adversaries and two-phase protocol are exactly the same as in the reproduction: the extension imports the same adversary logic from \texttt{section4\_bandit.py}. The only change is the feedback distribution, from Bernoulli observations to clipped Gaussian played-cell observations. The reported runs use $T=100{,}000$, 32 independent runs, seed 42, and $\sigma\in\{0.1,0.2,0.3\}$.
 
 \begin{table}[!htbp]
   \centering
@@ -242,37 +285,43 @@ For Section 4, we do not introduce a noise-aware bandit variant in the final com
     \toprule
     Adversary & UCB & EXP3 & OurAlg \\
     \midrule
-    1 & 8.27 & 142.42 & 73.58 \\
-    2 & 58.50 & 139.81 & 89.23 \\
-    3 & 773.81 & 1265.62 & 2.81 \\
+    1 & 7.53 & 141.27 & 77.90 \\
+    2 & 59.01 & 140.74 & 86.07 \\
+    3 & 778.26 & 703.05 & 2.86 \\
     \bottomrule
   \end{tabular}
-  \caption{Final Section 4 Nash regret at $\sigma=0.3$, $T=100{,}000$, 16 runs.}
+  \caption{Final Section 4 Nash regret at $\sigma=0.3$, $T=100{,}000$, 32 runs.}
   \label{tab:s4noise}
 \end{table}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
   \centering
-  \begin{minipage}{0.32\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/section4_noise_sigma0p1.png}\\
-    \small $\sigma=0.1$
-  \end{minipage}\hfill
-  \begin{minipage}{0.32\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/section4_noise_sigma0p2.png}\\
-    \small $\sigma=0.2$
-  \end{minipage}\hfill
-  \begin{minipage}{0.32\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/section4_noise_sigma0p3.png}\\
-    \small $\sigma=0.3$
-  \end{minipage}
-  \caption{Section 4 noisy bandit convergence, $T=100{,}000$. The three panels inside each subfigure are Adversaries 1--3. The midpoint jump is expected because Phase 2 switches to pure best response.}
+  \includegraphics[width=0.82\textwidth]{figures/section4_noise_sigma0p1.png}
+
+  \vspace{0.04cm}
+  {\small (a) $\sigma=0.1$}
+
+  \vspace{0.10cm}
+
+  \includegraphics[width=0.82\textwidth]{figures/section4_noise_sigma0p2.png}
+
+  \vspace{0.04cm}
+  {\small (b) $\sigma=0.2$}
+
+  \vspace{0.10cm}
+
+  \includegraphics[width=0.82\textwidth]{figures/section4_noise_sigma0p3.png}
+
+  \vspace{0.04cm}
+  {\small (c) $\sigma=0.3$}
+
+  \caption{Section 4 noisy bandit convergence, $T=100{,}000$. Each row contains Adversaries 1--3 for one noise level.}
   \label{fig:s4noise}
 \end{figure}
 
-The bandit extension should be interpreted relative to its modified feedback channel. Since clipped Gaussian samples have different variance and bias properties from Bernoulli observations, rankings need not match the noiseless Figure 2 reproduction. The most stable qualitative finding is on Adversary 3: at high noise, UCB and EXP3 accumulate very large regret after the phase switch, whereas \OurAlg{} remains close to the game value. Against Adversaries 1 and 2, UCB can remain competitive because the noise model and phase structure interact differently from the worst-case theoretical analysis.
+The bandit extension should be interpreted relative to its modified feedback channel. Since clipped Gaussian samples have different variance and bias properties from Bernoulli observations, rankings need not match the noiseless Figure 2 reproduction. The most stable qualitative finding is on Adversary 3: at high noise, UCB and EXP3 accumulate very large regret after the phase switch, whereas \OurAlg{} remains close to the game value. Against Adversaries 1 and 2, rankings are more adversary-dependent: UCB can remain competitive, EXP3 is usually the largest-regret baseline, and \OurAlg{} sits between them in these noisy finite-horizon runs.
+
+\FloatBarrier
 
 \section{Bilateral Learning Extension}
 
@@ -280,21 +329,25 @@ The paper evaluates a row learner against a fixed or adversarial column rule. Th
 
 \begin{figure}[!htbp]
   \centering
-  \begin{minipage}{0.48\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/section3_bilateral_n20.png}\\
-    \small (a) Section 3 diagonal game, $n=20$
-  \end{minipage}\hfill
-  \begin{minipage}{0.48\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/section4_bilateral_paper_lite.png}\\
-    \small (b) Section 4 bandit game
-  \end{minipage}
-  \caption{Bilateral-learning extension. Solid curves represent settings where both sides adapt; dashed curves keep the original adversarial-column comparison. These plots answer whether paper-style behaviour persists when the opponent is also a learner.}
+  \includegraphics[width=0.78\textwidth]{figures/section3_bilateral_n20.png}
+
+  \vspace{0.15cm}
+  {\small (a) Section 3 diagonal game, $n=20$.}
+
+  \vspace{0.40cm}
+
+  \includegraphics[width=0.88\textwidth]{figures/section4_bilateral_paper_lite.png}
+
+  \vspace{0.15cm}
+  {\small (b) Section 4 bandit game.}
+
+  \caption{Bilateral-learning extension. Solid curves show adaptive learner pairs, while dashed curves keep the original adversarial-column reference.}
   \label{fig:bilateral}
 \end{figure}
 
 The results should not be read as a contradiction of the paper when they differ from the baseline: the opponent class has changed. In the Section 3 plot, bilateral pairings can move away from the row-vs-best-response trajectories because the column player no longer instantly punishes deviations. In Section 4, the dashed curves recover the adversarial-column reference, while solid curves show the behaviour of learner-vs-learner interactions. The main conclusion is that bilateral learning exposes a different regime of the same games: it is relevant for understanding adaptive multi-agent play, but it is not the setting covered by the original regret theorem.
+
+\FloatBarrier
 
 \section{Bandit Nash Regret Beyond $2\times2$}
 
@@ -323,9 +376,11 @@ This extension is diagnostic rather than a claimed improvement. At $n=2$, \OurAl
 
 \section{Reproducibility and Limitations}
 
-Several assumptions should qualify the conclusions. First, all results are finite-horizon Monte Carlo estimates. The horizons, seeds, numbers of independent runs, game sizes, adversaries, and noise levels used for the report figures are stated in Table~\ref{tab:settings}. Shaded bands in the figures summarize empirical variation across independent runs using standard-deviation-style summaries where available; we did not bootstrap formal confidence intervals, so the bands should not be read as theorem-level confidence statements. Second, no algorithm was selected by tuning on a held-out validation problem: the report shows the paper algorithms and standard baselines under fixed settings. Third, Gaussian clipping changes the observation distribution; this is a reasonable bounded-payoff model but it introduces bias near the boundaries. Finally, copied figures are used only for stable compilation, while all source notebooks and scripts remain in the repository for regeneration.
+Several assumptions should qualify the conclusions. The report is designed to be reconstructable without needing to inspect the implementation code. The payoff matrices, feedback models, adversary rules, algorithmic baselines, proposed variants, horizons, seeds, numbers of independent runs, game sizes, noise levels, and evaluation metrics are stated in the methodology and extension sections, especially in Table~\ref{tab:settings}. The repository is included as supplementary material for exact execution and figure regeneration, not as a replacement for the methodological description.
 
-Overall, the reproduction supports the paper's main empirical claims: the proposed algorithms show flatter regret growth than generic online-learning baselines in the settings where the theory applies. The extensions show how sensitive that story is to assumptions: explicit noise-awareness helps in the full-information diagonal game, the original bandit algorithm remains the correct comparison under Section 4's adversaries with noisy observations, bilateral learning changes the opponent model and produces genuinely different dynamics, and larger bandit games expose limitations outside the proved $2\times2$ regime.
+First, all results are finite horizon Monte Carlo estimates. Shaded bands in the figures summarize empirical variation across independent runs using standard deviation style summaries where available; we did not bootstrap formal confidence intervals, so the bands should not be read as theorem level confidence statements. Second, no algorithm was selected by tuning on a held out validation problem: the report shows the paper algorithms and standard baselines under fixed settings. Third, Gaussian clipping changes the observation distribution; this is a reasonable bounded payoff model, but it can introduce bias near the boundaries. Finally, copied figures are used only for stable compilation, while the reported settings in the text are sufficient to understand and reconstruct the experiments.
+
+Overall, the reproduction supports the paper's main empirical claims: the proposed algorithms show flatter regret growth than generic online learning baselines in the settings where the theory applies. The extensions show how sensitive that story is to assumptions: explicit noise awareness helps in the full information diagonal game, the original bandit algorithm remains the correct comparison under Section 4's adversaries with noisy observations, bilateral learning changes the opponent model and produces genuinely different dynamics, and larger bandit games expose limitations outside the proved $2\times2$ regime.
 
 \bibliographystyle{alpha}
 \bibliography{references}
