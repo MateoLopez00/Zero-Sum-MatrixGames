@@ -113,15 +113,15 @@ On log-log axes this means Our-Algo should have a slope that flattens toward `0`
 
 In the **paper reproduction** above, the **column player follows a fixed rule** (pure best-response to the row mix). This extension studies **bilateral learning**: **both** players adapt from feedback while playing the same diagonal games.
 
-- **Section 3 (full information):** Each round both players see **Bernoulli samples** on the diagonal (same observation model as `run_official_diag_algo`), but **both** sides maintain strategies (Our–Our, Hedge–Hedge, Nash–Nash, etc.). For comparison, **dashed** curves replay the **original one-sided setting**: row learner vs **column best-response** (Nash / Hedge / Our-Algo as in the baseline scripts).
-- **Section 4 (2×2 bandit):** **Dashed** curves run each bandit algorithm against the **worst of the three column adversaries** from `section4_bandit.py` (same pipeline as the reproduction). **Solid** curves run **both** players as bandit learners (UCB vs UCB, EXP3 vs EXP3, OurAlg vs OurAlg, and mixed pairings).
+- **Section 3 (full information):** Each round both players see **Bernoulli samples** on the diagonal (same observation model as `run_official_diag_algo`). The figure below focuses on bilateral learner-pair curves, since the one-sided adversarial-column setting is already covered in the reproduction section.
+- **Section 4 (2×2 bandit):** Both players use bandit feedback rules on the same matrix game as the reproduction. The figure below focuses only on bilateral learner pairs (UCB vs UCB, EXP3 vs EXP3, OurAlg vs OurAlg, and mixed pairings).
 
 Code:
 
 - `Full_information_feedback/section3_bilateral.py`
-- `Bandit_feedback/section4_bilateral.py` (imports `Bandit_feedback/section4_bandit.py` for `A`, `V*`, and adversarial runs)
+- `Bandit_feedback/section4_bilateral.py`
 
-## Section 3 — diagonal game, bilateral vs adversarial column
+## Section 3 — diagonal game: bilateral learners
 
 ### Install
 
@@ -132,55 +132,27 @@ pip install -r requirements.txt
 
 ### How to run
 
-Examples (each call writes one figure under `plots_bilateral/` for that matrix size):
+Example:
 
 ```bash
-python section3_bilateral.py --preset paper-lite --n_actions 10
-python section3_bilateral.py --preset paper-lite --n_actions 20
 python section3_bilateral.py --preset paper-lite --n_actions 30
 ```
 
 Optional: `--variant` (`official`, `subroutine`, `theory-lp`) and `--preset` (`quick`, `medium`, `paper-lite`, …); defaults match `parse_args` in the script.
 
-### Paper-lite figures (`n = 10`, `20`, `30`)
+### Paper-lite curves (`n = 30`)
 
-Each plot shows **log(total Nash regret)** vs **time horizon `T`** on **linear `T`**. **Dashed:** Hedge / Our-Algo / Nash in the **original** adversarial-column setup. **Solid:** bilateral matches (Our vs Our, Hedge vs Hedge, Our vs Hedge, Nash vs Nash, Our vs Nash) where **both** players update from sampled matrix entries.
-
-<table>
-  <tr>
-    <td width="33%"><img src="Full_information_feedback/plots_bilateral/section3_bilateral_paper-lite_n10.png" width="100%" alt="Section 3 bilateral paper-lite n=10"></td>
-    <td width="33%"><img src="Full_information_feedback/plots_bilateral/section3_bilateral_paper-lite_n20.png" width="100%" alt="Section 3 bilateral paper-lite n=20"></td>
-    <td width="33%"><img src="Full_information_feedback/plots_bilateral/section3_bilateral_paper-lite_n30.png" width="100%" alt="Section 3 bilateral paper-lite n=30"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>n = 10</b></td>
-    <td align="center"><b>n = 20</b></td>
-    <td align="center"><b>n = 30</b></td>
-  </tr>
-</table>
-
-When **both** sides learn, regret curves need not align with the **column-BR** baseline: the game is no longer “row vs best-response”; Nash regret compares play to the **true** diagonal matrix value $V^*$ while strategies drift on both sides. **Our vs Our** (purple) and **Hedge vs Hedge** (brown) illustrate purely bilateral dynamics; **Our vs Nash** / **Our vs Hedge** mixes paper-style row updates with a learning or Nash-type column.
-
-### Our-Algo vs Our-Algo only (`paper-lite`)
-
-Same preset, focusing on symmetric Our row/column players at several `n`:
+The plot shows **log(total Nash regret)** vs **time horizon `T`** on linear `T` for bilateral learner pairs where both sides update from sampled matrix entries.
 
 <table>
   <tr>
-    <td width="33%"><img src="Full_information_feedback/plots_bilateral/section3_our_vs_our_paper-lite_n10.png" width="100%" alt="Our vs Our paper-lite n=10"></td>
-    <td width="33%"><img src="Full_information_feedback/plots_bilateral/section3_our_vs_our_paper-lite_n20.png" width="100%" alt="Our vs Our paper-lite n=20"></td>
-    <td width="33%"><img src="Full_information_feedback/plots_bilateral/section3_our_vs_our_paper-lite_n30.png" width="100%" alt="Our vs Our paper-lite n=30"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>n = 10</b></td>
-    <td align="center"><b>n = 20</b></td>
-    <td align="center"><b>n = 30</b></td>
+    <td align="center"><b>`paper-lite`, n = 30</b><br><img src="Full_information_feedback/plots_bilateral/section3_bilateral_paper-lite_n30.png" width="100%" alt="Section 3 bilateral paper-lite n=30"></td>
   </tr>
 </table>
 
-These plots isolate **symmetric** exploration–commit behaviour without mixing in Hedge/Nash bilateral pairs.
+In this bilateral plot, the opponent is no longer an immediate best response, so the curves answer a different question from the reproduction. **Our vs Our** has the largest cumulative Nash-regret growth in this run, while **Nash vs Nash** stays nearly flat because both sides remain close to the equilibrium-like fixed strategy. Mixed pairs such as **Our vs Nash** and **Our vs Hedge** sit between these extremes, showing how the row learner’s regret changes when the column side also follows a learning rule instead of the paper’s adversarial response.
 
-## Section 4 — 2×2 bandit: adversarial vs bilateral learners
+## Section 4 — 2×2 bandit: bilateral learners
 
 ### Install
 
@@ -194,31 +166,27 @@ pip install -r requirements.txt
 ### How to run
 
 ```bash
-python section4_bilateral.py --preset medium-plus
 python section4_bilateral.py --preset paper-lite
 ```
 
-Figures are saved under `plots_bilateral_bandit/` as `section4_bilateral_<preset>.png`.
+The figure is saved under `plots_bilateral_bandit/` as `section4_bilateral_paper-lite.png`.
 
 ### Figures
 
-Each figure overlays **dashed** lines (UCB / EXP3 / OurAlg each vs the **hardest** of the three scripted adversaries—matching `section4_bandit.py`) and **solid** lines for **bilateral** pairs (e.g. OurAlg vs OurAlg). The title reports the game **A** = [[2/3,0],[0,1/3]] and the number of random seeds.
+The generated figure focuses on **bilateral bandit learner pairs** only. Both players use bandit feedback rules on the same $2\times2$ game as Section 4, and the plot reports `log10(Nash Regret)` over the time horizon.
 
 <table>
-  <tr>
-    <td align="center"><b>`medium-plus` preset</b><br><img src="Bandit_feedback/plots_bilateral_bandit/section4_bilateral_medium-plus.png" width="100%" alt="Section 4 bilateral medium-plus"></td>
-  </tr>
   <tr>
     <td align="center"><b>`paper-lite` preset</b><br><img src="Bandit_feedback/plots_bilateral_bandit/section4_bilateral_paper-lite.png" width="100%" alt="Section 4 bilateral paper-lite"></td>
   </tr>
 </table>
 
-**Reading the plot:** Adversarial-column curves (**dashed**) recover the **worst-case** regret among adversaries 1–3 for each algorithm. Bilateral curves (**solid**) show cumulative Nash regret when **both** sides use bandit feedback rules; rankings across **solid** vs **dashed** lines are **not** directly comparable to the paper’s Figure 2 claim (that claim is for row learner vs strategic/adversarial column), but they show how generic bandit learners behave when **both** players adapt under the same observation structure.
+**Reading the plot:** The ranking is driven by the paired learning dynamics, not by the paper’s adversarial-column protocol. **UCB vs UCB** grows the most, **EXP3 vs EXP3** is also high, and **OurAlg vs OurAlg** plateaus below those two symmetric generic-bandit pairings. Mixed pairs occupy intermediate regimes: **UCB vs EXP3** is among the lower curves, while **EXP3 vs OurAlg** continues to grow more steadily. These results should not be compared directly to the Section 4 reproduction claim, because here both players adapt rather than fixing the column adversary.
 
 ## Extension conclusion (bilateral)
 
-- **Section 3:** Compares **paper-style row-vs-best-response** regret (dashed) to **fully bilateral** diagonal-game learning (solid), including symmetric **Our vs Our** and mixed bilateral pairs.
-- **Section 4:** Compares **adversarial-column** bandit regret (dashed, worst adversary) to **bilateral bandit** learning curves (solid) on the same $2\times 2$ game as Section 4 of the README.
+- **Section 3:** Shows **fully bilateral** diagonal-game learning curves at `n = 30`.
+- **Section 4:** Shows **bilateral bandit** learning curves only, on the same $2\times 2$ game as Section 4 of the README.
 
 ---
 

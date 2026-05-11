@@ -189,7 +189,7 @@ Figure~\ref{fig:baseline} summarises the two reproduction experiments using cumu
     Section 4 reproduction & $2\times2$ game with $\Vstar=2/9$; adversaries 1--3; two phases of $T/2$; $T=100{,}000$; 32 seeds; algorithms: UCB, EXP3, OurAlg. & S4 curves \\
     Section 3 noise & Full-information Gaussian-clipped feedback; $n=100$ convergence plots; $\sigma\in\{0.1,0.2,0.3\}$; $T=100{,}000$; 12 runs; seed 7. & S3 noise \\
     Section 4 noise & Same Section 4 adversaries and phases; played-cell Gaussian-clipped feedback; $\sigma\in\{0.1,0.2,0.3\}$; $T=100{,}000$; 32 runs; seed 42. & S4 noise \\
-    Bilateral learning & Both players update rather than fixing the column rule; diagonal full-information game shown at $n=20$; $2\times2$ bandit game shown with the same adversarial-column reference curves used in the Section 4 reproduction. & Bilateral \\
+    Bilateral learning & Both players update rather than fixing the column rule; diagonal full-information game shown at $n=30$; $2\times2$ bandit game shown with bilateral learner pairs only. & Bilateral \\
     Beyond $2\times2$ & Diagonal bandit games $n\in\{2,3,4,5,7,10\}$; $T$ up to $10^6$; 128 trials; algorithms: UCB, EXP3, OurAlg. & S4 larger-$n$ \\
     \bottomrule
   \end{tabularx}
@@ -325,14 +325,14 @@ The bandit extension should be interpreted relative to its modified feedback cha
 
 \section{Bilateral Learning Extension}
 
-The paper evaluates a row learner against a fixed or adversarial column rule. The bilateral extension changes this modelling assumption: both players update from feedback. This is a separate scientific question, not just a parameter change, because Nash regret is now measured while both strategies drift. In the full-information diagonal game, both players observe sampled matrix entries and run pairings such as \OurAlg{}--\OurAlg{}, Hedge--Hedge, Nash--Nash, and mixed pairs. In the $2\times2$ bandit game, bilateral learner pairs are compared with dashed adversarial-column curves that preserve the original Section 4 benchmark.
+The paper evaluates a row learner against a fixed or adversarial column rule. The bilateral extension changes this modelling assumption: both players update from feedback. This is a separate scientific question, not just a parameter change, because Nash regret is now measured while both strategies drift. In the full-information diagonal game, both players observe sampled matrix entries and run pairings such as \OurAlg{}--\OurAlg{}, Hedge--Hedge, Nash--Nash, and mixed pairs. In the $2\times2$ bandit game, both players use bandit feedback rules on the same matrix game as the Section 4 reproduction.
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.78\textwidth]{figures/section3_bilateral_n20.png}
+  \includegraphics[width=0.78\textwidth]{figures/section3_bilateral_n30.png}
 
   \vspace{0.15cm}
-  {\small (a) Section 3 diagonal game, $n=20$.}
+  {\small (a) Section 3 diagonal game, $n=30$.}
 
   \vspace{0.40cm}
 
@@ -341,11 +341,11 @@ The paper evaluates a row learner against a fixed or adversarial column rule. Th
   \vspace{0.15cm}
   {\small (b) Section 4 bandit game.}
 
-  \caption{Bilateral-learning extension. Solid curves show adaptive learner pairs, while dashed curves keep the original adversarial-column reference.}
+  \caption{Bilateral-learning extension. Both panels show learner-vs-learner curves only: full-information diagonal-game pairings in panel (a), and $2\times2$ bandit pairings in panel (b).}
   \label{fig:bilateral}
 \end{figure}
 
-The results should not be read as a contradiction of the paper when they differ from the baseline: the opponent class has changed. In the Section 3 plot, bilateral pairings can move away from the row-vs-best-response trajectories because the column player no longer instantly punishes deviations. In Section 4, the dashed curves recover the adversarial-column reference, while solid curves show the behaviour of learner-vs-learner interactions. The main conclusion is that bilateral learning exposes a different regime of the same games: it is relevant for understanding adaptive multi-agent play, but it is not the setting covered by the original regret theorem.
+The results should not be read as a contradiction of the paper when they differ from the baseline: the opponent class has changed. In the Section 3 plot, \OurAlg{}--\OurAlg{} has the largest cumulative Nash-regret growth in this run, while Nash--Nash stays nearly flat because both sides remain close to the equilibrium-like fixed strategy. Mixed pairs such as \OurAlg{}--Nash and \OurAlg{}--Hedge sit between these extremes, showing how the row learner's regret changes when the column side also follows a learning rule. In Section 4, UCB--UCB grows the most, EXP3--EXP3 is also high, and \OurAlg{}--\OurAlg{} plateaus below those two symmetric generic-bandit pairings. The main conclusion is that bilateral learning exposes a different regime of the same games: it is relevant for understanding adaptive multi-agent play, but it is not the setting covered by the original regret theorem.
 
 \FloatBarrier
 
