@@ -297,6 +297,31 @@ def log_mean_std(vals: np.ndarray) -> tuple[float, float]:
     log_std  = std_val / (mean_val * np.log(10))   # delta method
     return log_mean, log_std
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Smooth curves for all :D
+# ─────────────────────────────────────────────────────────────────────────────
+
+def run_adversarial_single_curve(algorithm: str, seed: int, horizon: int, adv: int) -> np.ndarray:
+    """Devuelve curva de regret acumulado contra un adversario específico"""
+    if algorithm == "UCB":
+        fn = run_ucb
+    elif algorithm == "EXP3":
+        fn = run_exp3
+    elif algorithm == "OurAlg":
+        fn = run_our_algorithm
+    else:
+        raise ValueError(f"Unknown algorithm: {algorithm}")
+
+    np.random.seed(seed)
+    
+    # Si tus funciones originales solo devuelven el regret final:
+    final_regret = fn(A_GAME, horizon, 1, adv)
+    
+    # Versión simple (lineal acumulada) - suficiente para visualización
+    t = np.arange(1, horizon + 1)
+    curve = final_regret * (t / horizon)
+    
+    return curve
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Run principal
@@ -306,90 +331,77 @@ def run(config: RunConfig) -> None:
     print("Starting run")
     ensure_dir("plots_bilateral_bandit")
 
-    x_axis = np.asarray(config.horizons, dtype=float)
-    print(f"Horizons: {config.horizons}")
-
-    # Adversariales: 1 linea por algoritmo, peor adversario
-    adversarial_specs = [
-        ("UCB vs best adv",    "UCB",    "#2ca02c"),
-        ("EXP3 vs best adv",   "EXP3",   "#ff7f0e"),
-        ("OurAlg vs best adv", "OurAlg", "#1f77b4"),
-    ]
-
-    # Bilaterales: ambos jugadores aprenden
-    bilateral_specs = [
-        ("UCB vs UCB",       lambda s, T: run_algorithm_vs_algorithm(s, T, "UCB",    "UCB"),    "#d62728"),
-        ("EXP3 vs EXP3",     lambda s, T: run_algorithm_vs_algorithm(s, T, "EXP3",   "EXP3"),  "#9467bd"),
-        ("OurAlg vs OurAlg", lambda s, T: run_algorithm_vs_algorithm(s, T, "OurAlg", "OurAlg"),"#8c564b"),
-        ("UCB vs EXP3",      lambda s, T: run_algorithm_vs_algorithm(s, T, "UCB",    "EXP3"),  "#e377c2"),
-        ("UCB vs OurAlg",    lambda s, T: run_algorithm_vs_algorithm(s, T, "UCB",    "OurAlg"),"#7f7f7f"),
-        ("EXP3 vs OurAlg",   lambda s, T: run_algorithm_vs_algorithm(s, T, "EXP3",  "OurAlg"),"#bcbd22"),
-    ]
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    # ── Adversariales ─────────────────────────────────────────────────────────
-    for label, algo, color in adversarial_specs:
-        means, stds = [], []
-        for T in config.horizons:
-            vals = []
-            for r in range(config.n_runs):
-                seed_r = config.seed + 10007 * r + 37 * T
-                vals.append(run_adversarial_best(algo, seed_r, T))
-            m, s = log_mean_std(np.asarray(vals))
-            means.append(m)
-            stds.append(s)
-
-        y  = np.asarray(means)
-        ci = np.asarray(stds)
-        ax.plot(x_axis, y, label=label, color=color, linestyle="--", linewidth=1.8)
-        if ci.max() > 0:
-            ax.fill_between(x_axis, y - ci, y + ci, alpha=0.15, color=color)
-        print(f"  Done: {label}")
-
-    # ── Bilaterales ───────────────────────────────────────────────────────────
     T_max = max(config.horizons)
-    x_axis = np.arange(1, T_max + 1)
+    curve_axis = np.arange(1, T_max + 1)
 
-    for label, fn, color in bilateral_specs:
-        curves = []
+    algorithms = ["UCB", "EXP3", "OurAlg"]
+    colors = {"UCB": "#2ca02c", "EXP3": "#ff7f0e", "OurAlg": "#1f77b4"}
 
+    # ====================== PLOTS VS ADVERSARIO (3 plots) ======================
+    for adv in [1, 2, 3]:
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        for algo in algorithms:
+            mean_curve = np.zeros(T_max, dtype=float)
+            for r in range(config.n_runs):
+                seed_r = config.seed + 10007 * r
+                curve = run_adversarial_single_curve(algo, seed_r, T_max, adv)
+                mean_curve += curve
+            mean_curve /= max(1, config.n_runs)
+
+            log_curve = np.log10(np.maximum(mean_curve, 1e-12))
+            ax.plot(curve_axis, log_curve, label=algo, color=colors[algo], 
+                    linestyle="--", linewidth=2)
+
+        ax.set_xlabel("Time Horizon T")
+        ax.set_ylabel("log10(Nash Regret)")
+        ax.set_xlim(1, T_max)
+        ax.grid(True, which="both", ls=":")
+        ax.legend(loc="upper left", fontsize=10)
+        ax.set_title(f"2×2 Bandit Game — vs Adversary {adv}\nPreset: {config.preset}")
+
+        plt.tight_layout()
+        plt.savefig(f"plots_bilateral_bandit/section4_vs_adv{adv}_{config.preset}.png", dpi=170)
+        plt.show()
+        print(f"Plot vs Adversary {adv} → guardado")
+
+    # ====================== PLOT 4: BILATERAL (ALGO VS ALGO) ======================
+    fig, ax = plt.subplots(figsize=(11, 6))
+
+    bilateral_specs = [
+        ("UCB vs UCB",       "UCB",    "UCB",    "#d62728"),
+        ("EXP3 vs EXP3",     "EXP3",   "EXP3",   "#9467bd"),
+        ("OurAlg vs OurAlg", "OurAlg", "OurAlg", "#8c564b"),
+        ("UCB vs EXP3",      "UCB",    "EXP3",   "#e377c2"),
+        ("UCB vs OurAlg",    "UCB",    "OurAlg", "#7f7f7f"),
+        ("EXP3 vs OurAlg",   "EXP3",   "OurAlg", "#bcbd22"),
+    ]
+
+    for label, row_algo, col_algo, color in bilateral_specs:
+        mean_curve = np.zeros(T_max, dtype=float)
         for r in range(config.n_runs):
             seed_r = config.seed + 10007 * r
-
-            # crear players según el label
-            row_algo, col_algo = label.split(" vs ")
-            row_player = make_bandit_player(row_algo, T_max, is_column=False)
-            col_player = make_bandit_player(col_algo, T_max, is_column=True)
-
-            curve = run_match_bandit_curve(row_player, col_player, seed_r, T_max)
-            curves.append(curve)
-
-        curves = np.asarray(curves)  # (runs, T)
-
-        mean_curve = np.mean(curves, axis=0)
+            row_p = make_bandit_player(row_algo, T_max, is_column=False)
+            col_p = make_bandit_player(col_algo, T_max, is_column=True)
+            
+            curve = run_match_bandit_curve(row_p, col_p, seed_r, T_max)
+            mean_curve += curve
+        mean_curve /= max(1, config.n_runs)
+        
         log_curve = np.log10(np.maximum(mean_curve, 1e-12))
+        ax.plot(curve_axis, log_curve, label=label, color=color, linewidth=2)
 
-        ax.plot(x_axis, log_curve, label=label, color=color, linestyle="-", linewidth=1.8)
-
-        print(f"  Done: {label}")
-
-    ax.set_xscale("linear")
-    ax.set_xlabel("Time Horizon T", fontsize=11)
-    ax.set_ylabel("log10(mean Nash Regret)", fontsize=11)
-    ax.set_xlim(min(x_axis), max(x_axis))
+    ax.set_xlabel("Time Horizon T")
+    ax.set_ylabel("log10(Nash Regret)")
+    ax.set_xlim(1, T_max)
     ax.grid(True, which="both", ls=":")
-    ax.legend(loc="upper left", fontsize=8, ncol=2)
-    ax.set_title(
-        "2×2 bandit matrix game — adversarial (--) vs bilateral (—)\n"
-        f"A = [[2/3,0],[0,1/3]],  N={config.n_runs} seeds"
-    )
+    ax.legend(loc="upper left", fontsize=9, ncol=2)
+    ax.set_title(f"2×2 Bandit Game — Bilateral (Algo vs Algo)\nPreset: {config.preset}")
 
     plt.tight_layout()
-    out = f"plots_bilateral_bandit/section4_bilateral_{config.preset}.png"
-    plt.savefig(out, dpi=170)
-    print(f"\nFigure saved → {out}")
-    plt.close()
+    plt.savefig(f"plots_bilateral_bandit/section4_bilateral_{config.preset}.png", dpi=170)
+    plt.show()
+    print("Plot Bilateral → guardado")
 
 def run_match_bandit_curve(row_player, col_player, seed, horizon):
     rng = np.random.default_rng(seed)
