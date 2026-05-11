@@ -43,7 +43,7 @@ def preset_config(preset: str) -> tuple[list[float], int, int]:
     if preset == "medium":
         return [0.0, 0.1, 0.2, 0.3], 8, 30_000
     if preset == "paper-lite":
-        return [0.0, 0.1, 0.2, 0.3], 12, 50_000
+        return [0.0, 0.1, 0.2, 0.3], 12, 100_000
     raise ValueError(f"Unknown preset: {preset}")
 
 
