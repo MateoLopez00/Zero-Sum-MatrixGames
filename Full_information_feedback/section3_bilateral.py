@@ -453,6 +453,78 @@ def run_our_vs_nash(seed: int, horizon: int, n: int) -> float:
         OurRowPlayer(n, horizon), NashColumnPlayer(n), seed, horizon, n
     )
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Smooth curve versions
+# ─────────────────────────────────────────────────────────────────────────────
+
+def run_nash_curve(seed: int, horizon: int, n: int) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    B = generate_diagonal_matrix(n)
+    V = _value_of_diag_game(B)
+    B1 = np.zeros((n, n), dtype=float)
+    regrets = np.zeros(horizon, dtype=float)
+    reg = 0.0
+    for t in range(horizon):
+        x = nash1_diag(B1)
+        val, _ = adversary(B, x)
+        reg += V - val
+        regrets[t] = reg
+        Bsamp = generate_bernoulli_diagonal_matrix(B, rng)
+        B1 = (t / (t + 1)) * B1 + (1.0 / (t + 1)) * Bsamp
+    return regrets
+
+
+def run_hedge_curve(seed: int, horizon: int, n: int) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    B = generate_diagonal_matrix(n)
+    V = _value_of_diag_game(B)
+    weights = np.ones(n, dtype=float)
+    eta = math.sqrt(math.log(max(n, 2)) / max(1, horizon))
+    regrets = np.zeros(horizon, dtype=float)
+    reg = 0.0
+    for t in range(horizon):
+        x = weights / np.sum(weights)
+        val, idx = adversary(B, x)
+        reg += V - val
+        regrets[t] = reg
+        Bsamp = generate_bernoulli_diagonal_matrix(B, rng)
+        reward_vector = Bsamp[:, idx]
+        weights *= np.exp(eta * reward_vector)
+    return regrets
+
+
+def run_official_curve(seed: int, horizon: int, n: int) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    B = generate_diagonal_matrix(n)
+    V = _value_of_diag_game(B)
+    B1 = np.zeros((n, n), dtype=float)
+    B2 = np.zeros((n, n), dtype=float)
+    jt = 0
+    x = np.ones(n, dtype=float) / n
+    count0 = 1
+    t0 = 1
+    threshold = min(math.log(max(horizon, 2)) ** 2, horizon**0.5)
+    regrets = np.zeros(horizon, dtype=float)
+    reg = 0.0
+
+    for t in range(horizon):
+        if count0 > 0 and t > threshold:
+            x = _update_official_diag(B2, x, jt, t0)
+            count0 -= 1
+        else:
+            t0 = t + 1
+            x = nash1_diag(B1)
+            count0 = t0 - 1
+            B2 = B1.copy()
+        
+        val, jt = adversary(B, x)
+        reg += V - val
+        regrets[t] = reg
+        
+        Bsamp = generate_bernoulli_diagonal_matrix(B, rng)
+        B1 = (t / (t + 1)) * B1 + (1.0 / (t + 1)) * Bsamp
+    return regrets
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Run
@@ -460,83 +532,74 @@ def run_our_vs_nash(seed: int, horizon: int, n: int) -> float:
 
 def run(config: RunConfig) -> None:
     ensure_dir("plots_bilateral")
-    horizons_axis = np.asarray(config.horizons, dtype=float)
-
-    # Algoritmos originales (adversario best-response)
-    original_specs = [
-        ("Hedge (adv)",    run_hedge,              "#2ca02c"),
-        ("Our-Algo (adv)", run_official_diag_algo, "#ff7f0e"),
-        ("Nash (adv)",     run_nash,               "#1f77b4"),
-    ]
-
-    # Algoritmos bilaterales (ambos jugadores aprenden)
-    bilateral_player_specs = [
-        ("Our vs Our",     lambda n, T: (OurRowPlayer(n, T), OurColumnPlayer(n, T)), "#9467bd"),
-        ("Hedge vs Hedge", lambda n, T: (HedgeRowPlayer(n, T), HedgeColumnPlayer(n, T)), "#8c564b"),
-        ("Our vs Hedge",   lambda n, T: (OurRowPlayer(n, T), HedgeColumnPlayer(n, T)), "#e377c2"),
-        ("Nash vs Nash",   lambda n, T: (NashRowPlayer(n), NashColumnPlayer(n)), "#7f7f7f"),
-        ("Our vs Nash",    lambda n, T: (OurRowPlayer(n, T), NashColumnPlayer(n)), "#bcbd22"),
-    ]
-
-    fig, ax = plt.subplots(figsize=(9, 5))
-
-    for label, fn, color in original_specs:
-        means: list[float] = []
-        stds: list[float] = []
-        for T in config.horizons:
-            vals = []
-            for r in range(config.n_runs):
-                seed = config.seed + 10007 * r + 37 * T
-                vals.append(fn(seed, T, config.n_actions))
-            arr = np.log10(np.maximum(np.asarray(vals, dtype=float), 1e-12))
-            means.append(float(np.mean(arr)))
-            stds.append(float(np.std(arr)))
-
-        y  = np.asarray(means, dtype=float)
-        ci = np.asarray(stds,  dtype=float)
-        ax.plot(horizons_axis, y, marker="o", label=label, color=color, linestyle="--")
-        ax.fill_between(horizons_axis, y - ci, y + ci, alpha=0.15, color=color)
-
     T_max = max(config.horizons)
     curve_axis = np.arange(1, T_max + 1)
 
-    for label, make_players, color in bilateral_player_specs:
+    # ====================== PLOT 1: VS ADVERSARIAL (Ahora con curvas suaves) ======================
+    fig1, ax1 = plt.subplots(figsize=(9, 6))
+
+    original_specs = [
+        ("Hedge (vs Adv)",    run_hedge_curve,      "#2ca02c"),
+        ("Our-Algo (vs Adv)", run_official_curve,   "#ff7f0e"),
+        ("Nash (vs Adv)",     run_nash_curve,       "#1f77b4"),
+    ]
+
+    for label, fn_curve, color in original_specs:
         mean_curve = np.zeros(T_max, dtype=float)
         for r in range(config.n_runs):
             seed = config.seed + 10007 * r
-            row_player, col_player = make_players(config.n_actions, T_max)
-            mean_curve += run_match_curve(
-                row_player, col_player, seed, T_max, config.n_actions
-            )
+            mean_curve += fn_curve(seed, T_max, config.n_actions)
         mean_curve /= max(1, config.n_runs)
+        
         log_curve = np.log10(np.maximum(mean_curve, 1e-12))
-        ax.plot(curve_axis, log_curve, label=label, color=color, linestyle="-")
+        ax1.plot(curve_axis, log_curve, label=label, color=color, linestyle="--", linewidth=2)
 
-    ax.set_xscale("linear")
-    ax.set_xlabel("Time Horizon T")
-    ax.set_ylabel("Log of Nash Regret (row player)")
-    ax.set_xlim(1, T_max)
-    ax.set_ylim(None, None)  # Automatic scaling
-    ax.yaxis.set_major_locator(MultipleLocator(0.2))
-    ax.grid(True, which="both", ls=":")
-    ax.legend(loc="upper left", fontsize=8, ncol=2)
-    ax.set_title(
-         f"{config.n_actions}×{config.n_actions} diagonal matrix — "
-         f"original (--) vs bilateral (—)"
-    )
-    #ax.set_title(
-    #    f"{config.n_actions}×{config.n_actions} diagonal matrix — Our vs Our"
-    #)
+    ax1.set_xscale("linear")
+    ax1.set_xlabel("Time Horizon T")
+    ax1.set_ylabel("Log10 of Nash Regret")
+    ax1.set_xlim(1, T_max)
+    ax1.yaxis.set_major_locator(MultipleLocator(0.2))
+    ax1.grid(True, which="both", ls=":")
+    ax1.legend(loc="upper left", fontsize=9)
+    ax1.set_title(f"{config.n_actions}×{config.n_actions} Diagonal — vs Adversarial")
+
     plt.tight_layout()
-    # plt.savefig(
-    #     f"plots/section3_bilateral_{config.preset}_n{config.n_actions}.png",
-    #     dpi=170,
-    # )
-    plt.savefig(
-        f"plots_bilateral/section3_bilateral_{config.preset}_n{config.n_actions}.png",
-        dpi=170,
-    )
+    plt.savefig(f"plots_bilateral/section3_vs_adversarial_{config.preset}_n{config.n_actions}.png", dpi=170)
     plt.show()
+
+    # ====================== PLOT 2: BILATERAL (Algo vs Algo) ======================
+#    fig2, ax2 = plt.subplots(figsize=(9, 6))
+#
+#    bilateral_player_specs = [
+#        ("Our vs Our",     lambda n, T: (OurRowPlayer(n, T), OurColumnPlayer(n, T)), "#9467bd"),
+#        ("Hedge vs Hedge", lambda n, T: (HedgeRowPlayer(n, T), HedgeColumnPlayer(n, T)), "#8c564b"),
+#        ("Our vs Hedge",   lambda n, T: (OurRowPlayer(n, T), HedgeColumnPlayer(n, T)), "#e377c2"),
+#        ("Nash vs Nash",   lambda n, T: (NashRowPlayer(n), NashColumnPlayer(n)), "#7f7f7f"),
+#        ("Our vs Nash",    lambda n, T: (OurRowPlayer(n, T), NashColumnPlayer(n)), "#bcbd22"),
+#    ]
+#
+#    for label, make_players, color in bilateral_player_specs:
+#        mean_curve = np.zeros(T_max, dtype=float)
+#        for r in range(config.n_runs):
+#            seed = config.seed + 10007 * r
+#            row_player, col_player = make_players(config.n_actions, T_max)
+#            mean_curve += run_match_curve(row_player, col_player, seed, T_max, config.n_actions)
+#        mean_curve /= max(1, config.n_runs)
+#        log_curve = np.log10(np.maximum(mean_curve, 1e-12))
+#        ax2.plot(curve_axis, log_curve, label=label, color=color, linestyle="-", linewidth=2)
+#
+#    ax2.set_xscale("linear")
+#    ax2.set_xlabel("Time Horizon T")
+#    ax2.set_ylabel("Log10 of Nash Regret (row player)")
+#    ax2.set_xlim(1, T_max)
+#    ax2.yaxis.set_major_locator(MultipleLocator(0.2))
+#    ax2.grid(True, which="both", ls=":")
+#    ax2.legend(loc="upper left", fontsize=9)
+#    ax2.set_title(f"{config.n_actions}×{config.n_actions} Diagonal — Bilateral (Algo vs Algo)")
+#
+#    plt.tight_layout()
+#    plt.savefig(f"plots_bilateral/section3_bilateral_{config.preset}_n{config.n_actions}.png", dpi=170)
+#    plt.show()
 
 
 def parse_args() -> RunConfig:
