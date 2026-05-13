@@ -427,9 +427,6 @@ def run(config: RunConfig) -> None:
         ("UCB vs EXP3",         "UCB",      "EXP3",     "#e377c2"),
         ("UCB vs OurAlg",       "UCB",      "OurAlg",   "#7f7f7f"),
         ("EXP3 vs OurAlg",      "EXP3",     "OurAlg",   "#bcbd22"),
-        ("OurAlg vs Rand",      "OurAlg",   "Rand",     "b"),
-        ("OurAlg vs Fixed",     "OurAlg",   "Fixed",    "g"),
-        ("OurAlg vs Uniform",   "OurAlg",   "Uniform",  "c")
     ]
 
     for label, row_algo, col_algo, color in bilateral_specs:
@@ -457,6 +454,42 @@ def run(config: RunConfig) -> None:
     plt.savefig(f"plots_bilateral_bandit/section4_bilateral_{config.preset}.png", dpi=170)
     plt.show()
     print("Plot Bilateral → guardado")
+
+
+    # ====================== PLOT: NON-ADVERSARIAL ======================
+    fig, ax = plt.subplots(figsize=(11, 6))
+    
+    bilateral_specs = [
+        ("OurAlg vs Rand",      "OurAlg",   "Rand",     "b"),
+        ("OurAlg vs Fixed",     "OurAlg",   "Fixed",    "g"),
+        ("OurAlg vs Uniform",   "OurAlg",   "Uniform",  "c"),
+    ]
+    for label, row_algo, col_algo, color in bilateral_specs:
+        mean_curve = np.zeros(T_max, dtype=float)
+        for r in range(config.n_runs):
+            seed_r = config.seed + 10007 * r
+            row_p = make_bandit_player(row_algo, T_max, is_column=False)
+            col_p = make_bandit_player(col_algo, T_max, is_column=True)
+            
+            curve = run_match_bandit_curve(row_p, col_p, seed_r, T_max)
+            mean_curve += curve
+        mean_curve /= max(1, config.n_runs)
+        
+        log_curve = np.log10(np.maximum(mean_curve, 1e-12))
+        ax.plot(curve_axis, log_curve, label=label, color=color, linewidth=2)
+
+    ax.set_xlabel("Time Horizon T")
+    ax.set_ylabel("log10(Nash Regret)")
+    ax.set_xlim(1, T_max)
+    ax.grid(True, which="both", ls=":")
+    ax.legend(loc="upper left", fontsize=9, ncol=2)
+    ax.set_title(f"2×2 Bandit Game — Non-adversarial\nPreset: {config.preset}")
+
+    plt.tight_layout()
+    plt.savefig(f"plots_bilateral_bandit/section4_bilateral_non-adversarial_{config.preset}.png", dpi=170)
+    plt.show()
+    print("Plot Bilateral → guardado")
+
 
 def run_match_bandit_curve(row_player, col_player, seed, horizon):
     rng = np.random.default_rng(seed)
