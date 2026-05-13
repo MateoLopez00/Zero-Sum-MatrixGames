@@ -290,8 +290,6 @@ class OurRowPlayer(Player):
                 self._init_subroutine()
             return
         # Use full opponent strategy (mixed) instead of just argmax
-        if self._A_hat == None or self._delta == None or self._eta_sub == None or self._clip == None:
-            raise ValueError()
         g = (self._A_hat[:-1, :] - self._A_hat[-1, :]) @ opponent_strategy
         self._delta = np.clip(
             self._delta + self._eta_sub * g, -self._clip, self._clip
@@ -357,8 +355,6 @@ class OurColumnPlayer(Player):
                 self._init_subroutine()
             return
         # Minimize: use full opponent strategy (mixed) instead of just argmax
-        if self._A_hat == None or self._delta == None or self._eta_sub == None or self._clip == None:
-            raise ValueError()
         g = -(self._A_hat[:, :-1].T @ opponent_strategy - self._A_hat[:, -1] @ opponent_strategy)
         self._delta = np.clip(
             self._delta + self._eta_sub * g, -self._clip, self._clip
@@ -376,6 +372,59 @@ class OurColumnPlayer(Player):
         self._clip = 1.0 / (D1 * math.sqrt(T1))
         self._delta = np.full(m - 1, -self._clip, dtype=float)
         self._phase = "subroutine"
+
+
+class RandColumnPlayer(Player):
+
+    def __init__(self, m: int) -> None:
+        self.m = m
+        self.rng = np.random.default_rng(seed=42)
+
+    def reset(self) -> None:
+        pass
+
+    def get_strategy(self) -> np.ndarray:
+        # Array with elements between 0 and 1 that sum up to 1.
+        return self.rng.dirichlet(np.ones(self.m))
+
+    def update(self, A_sample: np.ndarray, opponent_strategy: np.ndarray) -> None:
+        pass
+    
+
+class FixedColumnPlayer(Player):
+
+    def __init__(self, m: int) -> None:
+        self.m = m
+        self.fixed_strategy = np.zeros(m, dtype=float)
+        self.fixed_strategy[0] = 1
+
+    def reset(self) -> None:
+        pass
+
+    def get_strategy(self) -> np.ndarray:
+        return self.fixed_strategy
+
+    def update(self, A_sample: np.ndarray, opponent_strategy: np.ndarray) -> None:
+        pass
+
+    def set_action(self, i: int) -> None:
+        self.fixed_strategy = np.zeros(self.m, dtype=float)
+        self.fixed_strategy[i] = 1
+
+
+class UniformColumnPlayer(Player):
+
+    def __init__(self, m: int) -> None:
+        self.uniform_strategy = np.ones(m, dtype=float) / m
+
+    def reset(self) -> None:
+        pass
+
+    def get_strategy(self) -> np.ndarray:
+        return self.uniform_strategy
+
+    def update(self, A_sample: np.ndarray, opponent_strategy: np.ndarray) -> None:
+        pass
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -572,38 +621,70 @@ def run(config: RunConfig) -> None:
     plt.show()
 
     # ====================== PLOT 2: BILATERAL (Algo vs Algo) ======================
-#    fig2, ax2 = plt.subplots(figsize=(9, 6))
-#
-#    bilateral_player_specs = [
-#        ("Our vs Our",     lambda n, T: (OurRowPlayer(n, T), OurColumnPlayer(n, T)), "#9467bd"),
-#        ("Hedge vs Hedge", lambda n, T: (HedgeRowPlayer(n, T), HedgeColumnPlayer(n, T)), "#8c564b"),
-#        ("Our vs Hedge",   lambda n, T: (OurRowPlayer(n, T), HedgeColumnPlayer(n, T)), "#e377c2"),
-#        ("Nash vs Nash",   lambda n, T: (NashRowPlayer(n), NashColumnPlayer(n)), "#7f7f7f"),
-#        ("Our vs Nash",    lambda n, T: (OurRowPlayer(n, T), NashColumnPlayer(n)), "#bcbd22"),
-#    ]
-#
-#    for label, make_players, color in bilateral_player_specs:
-#        mean_curve = np.zeros(T_max, dtype=float)
-#        for r in range(config.n_runs):
-#            seed = config.seed + 10007 * r
-#            row_player, col_player = make_players(config.n_actions, T_max)
-#            mean_curve += run_match_curve(row_player, col_player, seed, T_max, config.n_actions)
-#        mean_curve /= max(1, config.n_runs)
-#        log_curve = np.log10(np.maximum(mean_curve, 1e-12))
-#        ax2.plot(curve_axis, log_curve, label=label, color=color, linestyle="-", linewidth=2)
-#
-#    ax2.set_xscale("linear")
-#    ax2.set_xlabel("Time Horizon T")
-#    ax2.set_ylabel("Log10 of Nash Regret (row player)")
-#    ax2.set_xlim(1, T_max)
-#    ax2.yaxis.set_major_locator(MultipleLocator(0.2))
-#    ax2.grid(True, which="both", ls=":")
-#    ax2.legend(loc="upper left", fontsize=9)
-#    ax2.set_title(f"{config.n_actions}×{config.n_actions} Diagonal — Bilateral (Algo vs Algo)")
-#
-#    plt.tight_layout()
-#    plt.savefig(f"plots_bilateral/section3_bilateral_{config.preset}_n{config.n_actions}.png", dpi=170)
-#    plt.show()
+    fig2, ax2 = plt.subplots(figsize=(9, 6))
+
+    bilateral_player_specs = [
+        ("Our vs Our",     lambda n, T: (OurRowPlayer(n, T), OurColumnPlayer(n, T)), "#9467bd"),
+        ("Hedge vs Hedge", lambda n, T: (HedgeRowPlayer(n, T), HedgeColumnPlayer(n, T)), "#8c564b"),
+        ("Our vs Hedge",   lambda n, T: (OurRowPlayer(n, T), HedgeColumnPlayer(n, T)), "#e377c2"),
+        ("Nash vs Nash",   lambda n, T: (NashRowPlayer(n), NashColumnPlayer(n)), "#7f7f7f"),
+        ("Our vs Nash",    lambda n, T: (OurRowPlayer(n, T), NashColumnPlayer(n)), "#bcbd22"),
+    ]
+
+    for label, make_players, color in bilateral_player_specs:
+        mean_curve = np.zeros(T_max, dtype=float)
+        for r in range(config.n_runs):
+            seed = config.seed + 10007 * r
+            row_player, col_player = make_players(config.n_actions, T_max)
+            mean_curve += run_match_curve(row_player, col_player, seed, T_max, config.n_actions)
+        mean_curve /= max(1, config.n_runs)
+        log_curve = np.log10(np.maximum(mean_curve, 1e-12))
+        ax2.plot(curve_axis, log_curve, label=label, color=color, linestyle="-", linewidth=2)
+
+    ax2.set_xscale("linear")
+    ax2.set_xlabel("Time Horizon T")
+    ax2.set_ylabel("Log10 of Nash Regret (row player)")
+    ax2.set_xlim(1, T_max)
+    ax2.yaxis.set_major_locator(MultipleLocator(0.2))
+    ax2.grid(True, which="both", ls=":")
+    ax2.legend(loc="upper left", fontsize=9)
+    ax2.set_title(f"{config.n_actions}×{config.n_actions} Diagonal — Bilateral (Algo vs Algo)")
+
+    plt.tight_layout()
+    plt.savefig(f"plots_bilateral/section3_bilateral_{config.preset}_n{config.n_actions}.png", dpi=170)
+    plt.show()
+
+    # ====================== PLOT: Non-adversarial ======================
+    fig2, ax2 = plt.subplots(figsize=(9, 6))
+
+    bilateral_player_specs = [
+        ("Our vs Random",   lambda n, T: (OurRowPlayer(n, T), RandColumnPlayer(n)),      "r"),
+        ("Our vs Fixed",    lambda n, T: (OurRowPlayer(n, T), FixedColumnPlayer(n)),     "b"),
+        ("Our vs Uniform",  lambda n, T: (OurRowPlayer(n, T), UniformColumnPlayer(n)),   "g"),
+    ]
+
+    for label, make_players, color in bilateral_player_specs:
+        mean_curve = np.zeros(T_max, dtype=float)
+        for r in range(config.n_runs):
+            seed = config.seed + 10007 * r
+            row_player, col_player = make_players(config.n_actions, T_max)
+            mean_curve += run_match_curve(row_player, col_player, seed, T_max, config.n_actions)
+        mean_curve /= max(1, config.n_runs)
+        log_curve = np.log10(np.maximum(mean_curve, 1e-12))
+        ax2.plot(curve_axis, log_curve, label=label, color=color, linestyle="-", linewidth=2)
+
+    ax2.set_xscale("linear")
+    ax2.set_xlabel("Time Horizon T")
+    ax2.set_ylabel("Log10 of Nash Regret (row player)")
+    ax2.set_xlim(1, T_max)
+    ax2.yaxis.set_major_locator(MultipleLocator(0.2))
+    ax2.grid(True, which="both", ls=":")
+    ax2.legend(loc="upper left", fontsize=9)
+    ax2.set_title(f"{config.n_actions}×{config.n_actions} Diagonal — Non-adversarial")
+
+    plt.tight_layout()
+    plt.savefig(f"plots_bilateral/section3_non-adversarial_{config.preset}_n{config.n_actions}.png", dpi=170)
+    plt.show()
 
 
 def parse_args() -> RunConfig:

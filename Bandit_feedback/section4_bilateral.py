@@ -463,7 +463,7 @@ def run(config: RunConfig) -> None:
     fig, ax = plt.subplots(figsize=(11, 6))
     
     bilateral_specs = [
-        ("OurAlg vs Rand",      "OurAlg",   "Rand",     "b"),
+        ("OurAlg vs Random",    "OurAlg",   "Rand",     "b"),
         ("OurAlg vs Fixed",     "OurAlg",   "Fixed",    "g"),
         ("OurAlg vs Uniform",   "OurAlg",   "Uniform",  "c"),
     ]

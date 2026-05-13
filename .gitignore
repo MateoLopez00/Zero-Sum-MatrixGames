@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 .python-version
 plots/
+plots_bilateral
 plots_bilateral_bandit
 
 # Keep Section 3 documentation figures under version control
