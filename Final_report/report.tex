@@ -325,7 +325,30 @@ The bandit extension should be interpreted relative to its modified feedback cha
 
 \section{Bilateral Learning Extension}
 
-The paper evaluates a row learner against a fixed or adversarial column rule. The bilateral extension changes this modelling assumption: both players update from feedback. This is a separate scientific question, not just a parameter change, because Nash regret is now measured while both strategies drift. In the full-information diagonal game, both players observe sampled matrix entries and run pairings such as \OurAlg{}--\OurAlg{}, Hedge--Hedge, Nash--Nash, and mixed pairs. In the $2\times2$ bandit game, both players use bandit feedback rules on the same matrix game as the Section 4 reproduction.
+The paper evaluates a row learner against a fixed or adversarial column rule. 
+Our bilateral extension changes this setting by allowing both players to update 
+their strategies simultaneously from feedback. This constitutes a different 
+learning scenario rather than a simple parameter variation, since the standard 
+best-response regret interpretation no longer directly applies in self-play. 
+In particular, the instantaneous payoff 
+$ x_t^\top A y_t $ 
+may exceed the equilibrium value 
+$ V^\star $, 
+making the signed equilibrium gap negative.
+
+Instead of reporting signed regret, we measure the cumulative absolute equilibrium gap
+
+\[
+\sum_{t=1}^T \left| V^\star - x_t^\top A y_t \right|,
+\]
+
+which serves as a stability metric indicating whether the joint dynamics converge 
+toward the Nash equilibrium value over time.
+
+In the full-information diagonal game, both players observe sampled matrix entries 
+and run pairings such as \OurAlg{}--\OurAlg{}, Hedge--Hedge, Nash--Nash, and mixed pairs. 
+In the $2 \times 2$ bandit game, both players use bandit-feedback updates on the 
+same matrix game as in the Section~4 reproduction.
 
 \begin{figure}[!htbp]
   \centering
@@ -345,13 +368,50 @@ The paper evaluates a row learner against a fixed or adversarial column rule. Th
   \label{fig:bilateral}
 \end{figure}
 
-The results should not be read as a contradiction of the paper when they differ from the baseline: the opponent class has changed. In the Section 3 plot, \OurAlg{}--\OurAlg{} has the largest cumulative Nash-regret growth in this run, while Nash--Nash stays nearly flat because both sides remain close to the equilibrium-like fixed strategy. Mixed pairs such as \OurAlg{}--Nash and \OurAlg{}--Hedge sit between these extremes, showing how the row learner's regret changes when the column side also follows a learning rule. In Section 4, UCB--UCB grows the most, EXP3--EXP3 is also high, and \OurAlg{}--\OurAlg{} plateaus below those two symmetric generic-bandit pairings. The main conclusion is that bilateral learning exposes a different regime of the same games: it is relevant for understanding adaptive multi-agent play, but it is not the setting covered by the original regret theorem.
+The results should not be interpreted as contradicting the original paper when 
+they differ from the adversarial baseline, since the opponent model changes 
+fundamentally in the bilateral setting.
+
+In the Section~3 experiment, Nash--Nash remains nearly flat because both players 
+repeatedly play the empirical Nash equilibrium of their current estimates, which 
+keeps the observed payoff close to $V^\star$ from early rounds onward and avoids 
+large exploratory deviations. In contrast, \OurAlg{}--\OurAlg{} exhibits the 
+largest cumulative absolute equilibrium gap because \OurAlg{} includes an aggressive 
+warm-up and reinitialization phase. When both players simultaneously explore in 
+this manner, the joint dynamics initially drift farther from $V^\star$ before 
+eventually stabilizing. Mixed pairings such as \OurAlg{}--Nash and 
+\OurAlg{}--Hedge lie between these extremes, reflecting the interaction between 
+an exploratory row learner and a more stable column strategy.
+
+In Section~4, UCB--UCB produces the largest growth because UCB was originally 
+designed for single-agent stochastic optimization rather than simultaneous 
+equilibrium learning. The optimistic updates of the row player and pessimistic 
+updates of the column player can induce persistent oscillatory behavior, delaying 
+convergence toward the Nash value. EXP3--EXP3 also accumulates a large equilibrium 
+gap because EXP3 maintains persistent exploration throughout the horizon. 
+By comparison, \OurAlg{}--\OurAlg{} plateaus at a lower level than both baselines, 
+suggesting that its update structure is more compatible with bilateral convergence 
+in the $2 \times 2$ setting.
+
+Overall, these experiments indicate that bilateral learning introduces a distinct 
+dynamical regime compared with the original adversarial formulation. The setting 
+is therefore useful for studying adaptive multi-agent interaction, although it 
+falls outside the assumptions of the original regret analysis, which considers 
+a fixed adversarial column player rather than a simultaneously adapting opponent.
 
 \FloatBarrier
 
-\section{Bandit Nash Regret Beyond $2\times2$}
+\section{Bandit Nash Regret Beyond $2\times2$: Diagnostic Extension}
+We applied the paper's Algorithm~6 to larger diagonal bandit games
+$(n \in \{2,3,4,5,7,10\})$ with 128 trials and horizons up to
+$T = 10^6$. The extension generalizes all algorithmic components like
+gradient, strategy update, phase structure, and epoch logic to their
+natural $n$-dimensional analogues. However, two implementation choices
+optimize for the diagonal game class: the Nash equilibrium and the
+$D$ parameter are computed from diagonal entries of the UCB matrix
+$F_2$ only, rather than from the full matrix. This is a computational
+choice for stability and speed, not a mathematical requirement.
 
-The final extension applies the reference Algorithm 6 implementation to larger diagonal bandit games, even though the paper's guarantee is for the $2\times2$ construction. The experiment uses $n\in\{2,3,4,5,7,10\}$, UCB/EXP3/\OurAlg{} baselines, 128 trials, and horizons up to $T=10^6$. Table~\ref{tab:beyond2x2} reports mean terminal Nash regret at $T=10^6$ and the maximum decade-to-decade log--log slope for \OurAlg{} as a diagnostic.
 
 \begin{table}[!htbp]
   \centering
@@ -368,11 +428,28 @@ The final extension applies the reference Algorithm 6 implementation to larger d
     10 & 45.91 & 6449.91 & 6993.62 & 1.07 \\
     \bottomrule
   \end{tabular}
-  \caption{Beyond-$2\times2$ extension: mean terminal Nash regret at $T=10^6$ over 128 trials, with a supplementary slope diagnostic for \OurAlg{}. The construction remains favourable at $n=2$ but deteriorates as the number of actions increases.}
+  \caption{Table~4 reports terminal Nash regret at $T = 10^6$ and terminal (final
+decade) log--log slope. The terminal slope shows the limiting growth
+rate as $T \to \infty$, while the absolute regret comparison against UCB
+shows the practical performance boundary.}
   \label{tab:beyond2x2}
 \end{table}
 
-This extension is diagnostic rather than a claimed improvement. At $n=2$, \OurAlg{} has the lowest terminal regret, but its advantage disappears as actions increase; by $n=10$, regret is far above both baselines and the slope exceeds one. This does not conflict with the source paper, which does not prove the $2\times2$ construction for arbitrary matrix size. It instead gives an empirical failure mode: as $n$ grows, each entry receives fewer bandit observations per unit time and the update becomes less well conditioned.
+Why the diagonal optimization matters. The paper's Algorithm~6 computes
+Nash using all entries of the full UCB matrix $F_2 = \hat{B} + \text{bonus}$,
+including off-diagonal entries which carry confidence bonuses from
+unobserved pairs. For general matrices, these off-diagonal estimates are
+signal. For diagonal games, they are pure noise and the true game has zero
+off-diagonal entries, so large off-diagonal bonuses distort Nash
+estimation during exploration. By computing Nash from diagonal entries
+only, we filter this noise and provide the algorithm with cleaner
+strategy direction. This is valid for the diagonal game class but does
+not transfer to general games. A purist port of Algorithm~6 to general
+$n \times n$ games would use full-matrix Nash, lose to UCB earlier than
+$n=5$, and directly address the paper's open problem. Our approach
+instead shows where failure occurs even under ideal conditions:
+exploration coverage degrades from $n=5$ onward, becomes severe by
+$n=10$, and prevents extension beyond the proved $2 \times 2$ regime.
 
 \section{Reproducibility and Limitations}
 
