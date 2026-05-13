@@ -290,6 +290,8 @@ class OurRowPlayer(Player):
                 self._init_subroutine()
             return
         # Use full opponent strategy (mixed) instead of just argmax
+        if self._A_hat == None or self._delta == None or self._eta_sub == None or self._clip == None:
+            raise ValueError()
         g = (self._A_hat[:-1, :] - self._A_hat[-1, :]) @ opponent_strategy
         self._delta = np.clip(
             self._delta + self._eta_sub * g, -self._clip, self._clip
@@ -355,6 +357,8 @@ class OurColumnPlayer(Player):
                 self._init_subroutine()
             return
         # Minimize: use full opponent strategy (mixed) instead of just argmax
+        if self._A_hat == None or self._delta == None or self._eta_sub == None or self._clip == None:
+            raise ValueError()
         g = -(self._A_hat[:, :-1].T @ opponent_strategy - self._A_hat[:, -1] @ opponent_strategy)
         self._delta = np.clip(
             self._delta + self._eta_sub * g, -self._clip, self._clip
