@@ -216,7 +216,7 @@ class OurAlgBanditPlayer(BanditPlayer):
 
 
 class RandBanditPlayer(BanditPlayer):
-    """Draw a random strategy at each round."""
+    """Draw a random strategy in each round."""
     def __init__(self, horizon: int, is_column: bool = False) -> None:
         self.rng = np.random.default_rng(seed=42)
 
@@ -232,10 +232,9 @@ class RandBanditPlayer(BanditPlayer):
 
 
 class FixedBanditPlayer(BanditPlayer):
+    """Always play the same action."""
     def __init__(self, horizon: int, is_column: bool = False) -> None:
-        self.rng = np.random.default_rng(seed=42)
-        self.fixed_x1 = self.rng.random()
-        self.fixed_strategy = np.asarray([self.fixed_x1, 1.0 - self.fixed_x1], dtype=float)
+        self.fixed_strategy = np.asarray([0.0, 1.0], dtype=float)   # Always play action 2 by default
 
     def reset(self) -> None:
         pass
@@ -246,8 +245,12 @@ class FixedBanditPlayer(BanditPlayer):
     def update_bandit(self, i: int, j: int, payoff: float) -> None:
         pass
 
+    def switch_action(self) -> None:
+        self.fixed_strategy = (self.fixed_strategy + 1) % 2
+
 
 class UniformBanditPlayer(BanditPlayer):
+    """Play either action with 50 % probability."""
     def __init__(self, horizon: int, is_column: bool = False) -> None:
         self.uniform_strategy = np.asarray([0.5, 0.5], dtype=float)
 
