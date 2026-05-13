@@ -138,7 +138,7 @@ class OurAlgBanditPlayer(BanditPlayer):
         self._init_state()
 
     def _init_state(self) -> None:
-        self.B2 = np.zeros((1, 2, 2), dtype=float)
+        self.B2 = np.zeros((1, 2, 2), dtype=float)  # Empirical mean payoff matrix
         self.U2 = np.zeros((1, 2, 2), dtype=float)
         self.F2 = np.zeros((1, 2, 2), dtype=float)
         self.cnt = np.zeros((1, 2, 2), dtype=int)
@@ -207,12 +207,58 @@ class OurAlgBanditPlayer(BanditPlayer):
         # actualizar B2 con payoff real
         self.cnt[0, i, j] += 1
         c = self.cnt[0, i, j]
-        self.B2[0, i, j] += (payoff - self.B2[0, i, j]) / c
+        self.B2[0, i, j] += (payoff - self.B2[0, i, j]) / c     # Incremental (online) mean update formula
         devs = np.sqrt(self.log_c / (self.cnt + 1.0))
         self.U2 = self.B2 + devs
         self.error[0] = min(self.error[0], float(devs.max()))
         self.jt = j if not self.is_column else i
         self.t += 1
+
+
+class RandBanditPlayer(BanditPlayer):
+    """Draw a random strategy at each round."""
+    def __init__(self, horizon: int, is_column: bool = False) -> None:
+        self.rng = np.random.default_rng(seed=42)
+
+    def reset(self) -> None:
+        pass
+
+    def get_strategy(self) -> np.ndarray:
+        x1 = self.rng.random()
+        return np.asarray([x1, 1.0 - x1], dtype=float)
+
+    def update_bandit(self, i: int, j: int, payoff: float) -> None:
+        pass
+
+
+class FixedBanditPlayer(BanditPlayer):
+    def __init__(self, horizon: int, is_column: bool = False) -> None:
+        self.rng = np.random.default_rng(seed=42)
+        self.fixed_x1 = self.rng.random()
+        self.fixed_strategy = np.asarray([self.fixed_x1, 1.0 - self.fixed_x1], dtype=float)
+
+    def reset(self) -> None:
+        pass
+
+    def get_strategy(self) -> np.ndarray:
+        return self.fixed_strategy
+
+    def update_bandit(self, i: int, j: int, payoff: float) -> None:
+        pass
+
+
+class UniformBanditPlayer(BanditPlayer):
+    def __init__(self, horizon: int, is_column: bool = False) -> None:
+        self.uniform_strategy = np.asarray([0.5, 0.5], dtype=float)
+
+    def reset(self) -> None:
+        pass
+
+    def get_strategy(self) -> np.ndarray:
+        return self.uniform_strategy
+
+    def update_bandit(self, i: int, j: int, payoff: float) -> None:
+        pass
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -252,6 +298,12 @@ def make_bandit_player(algorithm: str, horizon: int, is_column: bool) -> BanditP
         return EXP3BanditPlayer(horizon, is_column=is_column)
     if algorithm == "OurAlg":
         return OurAlgBanditPlayer(horizon, is_column=is_column)
+    if algorithm == "Rand":
+        return RandBanditPlayer(horizon)
+    if algorithm == "Fixed":
+        return FixedBanditPlayer(horizon)
+    if algorithm == "Uniform":
+        return UniformBanditPlayer(horizon)
     raise ValueError(f"Unknown algorithm: {algorithm}")
 
 
@@ -369,12 +421,15 @@ def run(config: RunConfig) -> None:
     fig, ax = plt.subplots(figsize=(11, 6))
 
     bilateral_specs = [
-        ("UCB vs UCB",       "UCB",    "UCB",    "#d62728"),
-        ("EXP3 vs EXP3",     "EXP3",   "EXP3",   "#9467bd"),
-        ("OurAlg vs OurAlg", "OurAlg", "OurAlg", "#8c564b"),
-        ("UCB vs EXP3",      "UCB",    "EXP3",   "#e377c2"),
-        ("UCB vs OurAlg",    "UCB",    "OurAlg", "#7f7f7f"),
-        ("EXP3 vs OurAlg",   "EXP3",   "OurAlg", "#bcbd22"),
+        ("UCB vs UCB",          "UCB",      "UCB",      "#d62728"),
+        ("EXP3 vs EXP3",        "EXP3",     "EXP3",     "#9467bd"),
+        ("OurAlg vs OurAlg",    "OurAlg",   "OurAlg",   "#8c564b"),
+        ("UCB vs EXP3",         "UCB",      "EXP3",     "#e377c2"),
+        ("UCB vs OurAlg",       "UCB",      "OurAlg",   "#7f7f7f"),
+        ("EXP3 vs OurAlg",      "EXP3",     "OurAlg",   "#bcbd22"),
+        ("OurAlg vs Rand",      "OurAlg",   "Rand",     "b"),
+        ("OurAlg vs Fixed",     "OurAlg",   "Fixed",    "g"),
+        ("OurAlg vs Uniform",   "OurAlg",   "Uniform",  "c")
     ]
 
     for label, row_algo, col_algo, color in bilateral_specs:
