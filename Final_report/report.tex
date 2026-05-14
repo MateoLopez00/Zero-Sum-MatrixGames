@@ -401,6 +401,36 @@ a fixed adversarial column player rather than a simultaneously adapting opponent
 
 \FloatBarrier
 
+\section{Non-Adversarial Column Player Extension}
+The algorithm Arnab et al. minimizes the regret against an adversarial column player, but how does the algorithm react when the column player is not deliberately trying to minimize the row player's return? This extension explores how the algorithm from Arnab et al. adapts to less hostile and presumably easier environments.
+
+We use three non-adversarial responses, a fixed response, a uniform response, and a random response. A fixed response is a response where the column player plays the same action in every round. Uniform response means the column player always plays the strategy that gives equal probability to each action, specifically $y_t=\frac{1}{m}\mathbf{1}, \; \forall t \in T$. For the random response you draw a new, random simplex in each round using the Dirichlet distribution, which will then serve as the column player's strategy.
+
+The Nash regret is used to evaluate the performance, like in the adversarial scenario. Thus, the results allow a direct comparison between the alternative scenarios.
+
+The algorithm from Arnab et al. still achieves sub-polynomial regret against these weaker opponents, see Fig. \ref{fig:non-adversarial}. The row player incures substatially less regret than he does against an adversarial coloumn player. This affirms the paper's claim that their algorithm achieves polylog(T) regret against any player. 
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.78\textwidth]{figures/section3_non-adversarial_paper-lite_n20.png}
+
+  \vspace{0.15cm}
+  {\small (a)}
+
+  \vspace{0.40cm}
+
+  \includegraphics[width=0.88\textwidth]{figures/section4_bilateral_non-adversarial_paper-lite.png}
+
+  \vspace{0.15cm}
+  {\small (b)}
+
+  \caption{Row player's incurred regret when playing against a non-adversarial column player: full-information diagonal-game pairings in panel (a), and $2\times2$ bandit pairings in panel (b).}
+  \label{fig:non-adversarial}
+\end{figure}
+
+
+\FloatBarrier
+
 \section{Bandit Nash Regret Beyond $2\times2$: Diagnostic Extension}
 We applied the paper's Algorithm~6 to larger diagonal bandit games
 $(n \in \{2,3,4,5,7,10\})$ with 128 trials and horizons up to
