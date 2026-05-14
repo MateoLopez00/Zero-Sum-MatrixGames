@@ -20,6 +20,7 @@ class RunConfig:
     preset: str = "quick"
     n_actions: int = 20
     variant: str = "official"
+    task: str = "reproduction"
 
 
 def section3_horizons_for_preset(preset: str) -> tuple[list[int], int]:
@@ -584,11 +585,13 @@ def run_official_curve(seed: int, horizon: int, n: int) -> np.ndarray:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def run(config: RunConfig) -> None:
+    """Algo from paper Vs adversarial column player (Ahora con curvas suaves)"""
+    print("Running reproduction of paper section 3")
+
     ensure_dir("plots_bilateral")
     T_max = max(config.horizons)
     curve_axis = np.arange(1, T_max + 1)
 
-    # ====================== PLOT 1: VS ADVERSARIAL (Ahora con curvas suaves) ======================
     fig1, ax1 = plt.subplots(figsize=(9, 6))
 
     original_specs = [
@@ -618,9 +621,14 @@ def run(config: RunConfig) -> None:
 
     plt.tight_layout()
     plt.savefig(f"plots_bilateral/section3_vs_adversarial_{config.preset}_n{config.n_actions}.png", dpi=170)
-    plt.show()
 
-    # ====================== PLOT 2: BILATERAL (Algo vs Algo) ======================
+def run_extension_bilateral(config: RunConfig) -> None:
+    """BILATERAL (algo vs algo)"""
+    print("Running extension: Bilateral control (algo vs algo)")
+    ensure_dir("plots_bilateral")
+    T_max = max(config.horizons)
+    curve_axis = np.arange(1, T_max + 1)
+
     fig2, ax2 = plt.subplots(figsize=(9, 6))
 
     bilateral_player_specs = [
@@ -652,7 +660,13 @@ def run(config: RunConfig) -> None:
 
     plt.tight_layout()
     plt.savefig(f"plots_bilateral/section3_bilateral_{config.preset}_n{config.n_actions}.png", dpi=170)
-    plt.show()
+
+def run_extension_non_adversarial(config: RunConfig) -> None:
+    print("Running extension: Non adversarial column player")
+    
+    ensure_dir("plots_bilateral")
+    T_max = max(config.horizons)
+    curve_axis = np.arange(1, T_max + 1)
 
     # ====================== PLOT: Non-adversarial ======================
     fig2, ax2 = plt.subplots(figsize=(9, 6))
@@ -684,7 +698,6 @@ def run(config: RunConfig) -> None:
 
     plt.tight_layout()
     plt.savefig(f"plots_bilateral/section3_non-adversarial_{config.preset}_n{config.n_actions}.png", dpi=170)
-    plt.show()
 
 
 def parse_args() -> RunConfig:
@@ -701,6 +714,11 @@ def parse_args() -> RunConfig:
         "--variant", default="subroutine",
         choices=["official", "subroutine", "theory-lp"]
     )
+    p.add_argument(
+        "--task", 
+        default="all", 
+        choices=["all", "reproduction", "extension_bilateral", "extension_non_adversarial"]
+    )
     a = p.parse_args()
     preset_horizons, preset_runs = section3_horizons_for_preset(a.preset)
     horizons = a.horizons if a.horizons else preset_horizons
@@ -712,8 +730,15 @@ def parse_args() -> RunConfig:
         preset=a.preset,
         n_actions=a.n_actions,
         variant=a.variant,
+        task=a.task
     )
 
 
 if __name__ == "__main__":
-    run(parse_args())
+    run_config = parse_args()
+    if run_config.task == "reproduction" or run_config.task == "all":
+        run(run_config)
+    if run_config.task == "extension_bilateral" or run_config.task == "all":
+        run_extension_bilateral(run_config)
+    if run_config.task == "extension_non_adversarial" or run_config.task == "all":
+        run_extension_non_adversarial(run_config)
