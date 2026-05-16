@@ -3,10 +3,12 @@ __pycache__/
 .venv/
 .python-version
 plots/
-plots_bilateral
-plots_bilateral_bandit
+plots_bilateral/*
+plots_bilateral_bandit/*
 
 # Keep Section 3 documentation figures under version control
 !Full_information_feedback/plots/
 !Full_information_feedback/plots/*.png
 
+!plots_bilateral/section3_non-adversarial_paper-lite_n20.png
+!plots_bilateral_bandit/section4_bilateral_non-adversarial_paper-lite.png
