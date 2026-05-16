@@ -32,6 +32,7 @@ class RunConfig:
     n_runs: int
     seed: int = 7
     preset: str = "quick"
+    task: str = "all"
 
 
 def section4_horizons_for_preset(preset: str) -> tuple[list[int], int]:
@@ -382,7 +383,7 @@ def run_adversarial_single_curve(algorithm: str, seed: int, horizon: int, adv: i
 # Run principal
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run(config: RunConfig) -> None:
+def run_reproduction(config: RunConfig) -> None:
     print("Starting run")
     ensure_dir("plots_bilateral_bandit")
 
@@ -420,7 +421,15 @@ def run(config: RunConfig) -> None:
         plt.show()
         print(f"Plot vs Adversary {adv} → guardado")
 
-    # ====================== PLOT 4: BILATERAL (ALGO VS ALGO) ======================
+
+def run_extension_bilateral(config: RunConfig) -> None:
+    """Run and plot extension bilateral (algo vs algo)"""
+    print("Run extension bilateral")
+    ensure_dir("plots_bilateral_bandit")
+
+    T_max = max(config.horizons)
+    curve_axis = np.arange(1, T_max + 1)
+
     fig, ax = plt.subplots(figsize=(11, 6))
 
     bilateral_specs = [
@@ -459,7 +468,14 @@ def run(config: RunConfig) -> None:
     print("Plot Bilateral → guardado")
 
 
-    # ====================== PLOT: NON-ADVERSARIAL ======================
+def run_extension_non_adversarial(config: RunConfig) -> None:
+    """Run and plot extension non-adversarial"""
+    print("Run extension non-adversarial")
+    ensure_dir("plots_bilateral_bandit")
+
+    T_max = max(config.horizons)
+    curve_axis = np.arange(1, T_max + 1)
+
     fig, ax = plt.subplots(figsize=(11, 6))
     
     bilateral_specs = [
@@ -519,8 +535,7 @@ def run_match_bandit_curve(row_player, col_player, seed, horizon):
 
     return regrets
 
-
-if __name__ == "__main__":
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--preset", type=str, default="quick",
@@ -528,6 +543,11 @@ if __name__ == "__main__":
     )
     parser.add_argument("--n_runs", type=int, default=None)
     parser.add_argument("--seed",   type=int, default=7)
+    parser.add_argument(
+        "--task", 
+        default="all", 
+        choices=["all", "reproduction", "extension_bilateral", "extension_non_adversarial"]
+    )
     args = parser.parse_args()
 
     horizons, default_n_runs = section4_horizons_for_preset(args.preset)
@@ -538,6 +558,18 @@ if __name__ == "__main__":
         n_runs=n_runs,
         seed=args.seed,
         preset=args.preset,
+        task=args.task,
     )
-    run(config)
+    return config
+
+
+if __name__ == "__main__":
+    run_config = parse_args()
+    if run_config.task == "reproduction" or run_config.task == "all":
+        run_reproduction(run_config)
+    if run_config.task == "extension_bilateral" or run_config.task == "all":
+        run_extension_bilateral(run_config)
+    if run_config.task == "extension_non_adversarial" or run_config.task == "all":
+        run_extension_non_adversarial(run_config)
+
     
