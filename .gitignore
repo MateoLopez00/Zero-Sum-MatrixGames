@@ -21,3 +21,6 @@ plots/
 !Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/
 !Extensions/Extension_Noise_Robustness_Bandit_feedback/plots/*.png
 
+# Ignore compilation files but not the report itself
+Final_report/report.*
+!Final_report/report.tex
