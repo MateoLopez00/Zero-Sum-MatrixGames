@@ -498,18 +498,18 @@ def run_extension_non_adversarial(config: RunConfig) -> None:
         ax.plot(curve_axis, log_curve, label=label, color=color, linewidth=2)
     
     # Add adversaries from paper for the reference
-    colors = ["c", "m", "y"]
-    for adv in [1, 2, 3]:
-        mean_curve = np.zeros(T_max, dtype=float)
-        for r in range(config.n_runs):
-            seed_r = config.seed + 10007 * r
-            curve = run_adversarial_single_curve("OurAlg", seed_r, T_max, adv)
-            mean_curve += curve
-        mean_curve /= max(1, config.n_runs)
+    # colors = ["c", "m", "y"]
+    # for adv in [1, 2, 3]:
+    #     mean_curve = np.zeros(T_max, dtype=float)
+    #     for r in range(config.n_runs):
+    #         seed_r = config.seed + 10007 * r
+    #         curve = run_adversarial_single_curve("OurAlg", seed_r, T_max, adv)
+    #         mean_curve += curve
+    #     mean_curve /= max(1, config.n_runs)
 
-        log_curve = np.log10(np.maximum(mean_curve, 1e-12))
-        ax.plot(curve_axis, log_curve, label=f"Adv {adv}", color=colors[adv-1], 
-                linestyle="--", linewidth=2)
+    #     log_curve = np.log10(np.maximum(mean_curve, 1e-12))
+    #     ax.plot(curve_axis, log_curve, label=f"Adv {adv}", color=colors[adv-1], 
+    #             linestyle="--", linewidth=2)
 
     ax.set_xlabel("Time Horizon T")
     ax.set_ylabel("log10(Nash Regret)")

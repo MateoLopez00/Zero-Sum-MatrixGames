@@ -688,13 +688,13 @@ def run_extension_non_adversarial(config: RunConfig) -> None:
         ax2.plot(curve_axis, log_curve, label=label, color=color, linestyle="-", linewidth=2)
 
     # Normal run of our algo (from paper) vs adversary for comparison
-    mean_curve = np.zeros(T_max, dtype=float)
-    for r in range(config.n_runs):
-        seed = config.seed + 10007 * r
-        mean_curve += run_official_curve(seed, T_max, config.n_actions)
-    mean_curve /= max(1, config.n_runs)
-    log_curve = np.log10(np.maximum(mean_curve, 1e-12))
-    ax2.plot(curve_axis, log_curve, label="Our-Algo (vs Adv)", color="m", linestyle="--", linewidth=2)
+    # mean_curve = np.zeros(T_max, dtype=float)
+    # for r in range(config.n_runs):
+    #     seed = config.seed + 10007 * r
+    #     mean_curve += run_official_curve(seed, T_max, config.n_actions)
+    # mean_curve /= max(1, config.n_runs)
+    # log_curve = np.log10(np.maximum(mean_curve, 1e-12))
+    # ax2.plot(curve_axis, log_curve, label="Our-Algo (vs Adv)", color="m", linestyle="--", linewidth=2)
 
     ax2.set_xscale("linear")
     ax2.set_xlabel("Time Horizon T")
