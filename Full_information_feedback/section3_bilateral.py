@@ -377,9 +377,9 @@ class OurColumnPlayer(Player):
 
 class RandColumnPlayer(Player):
 
-    def __init__(self, m: int) -> None:
+    def __init__(self, m: int, seed: int) -> None:
         self.m = m
-        self.rng = np.random.default_rng(seed=42)
+        self.rng = np.random.default_rng(seed=seed)
 
     def reset(self) -> None:
         pass
@@ -672,16 +672,16 @@ def run_extension_non_adversarial(config: RunConfig) -> None:
     fig2, ax2 = plt.subplots(figsize=(9, 6))
 
     bilateral_player_specs = [
-        ("Our vs Random",   lambda n, T: (OurRowPlayer(n, T), RandColumnPlayer(n)),      "r"),
-        ("Our vs Fixed",    lambda n, T: (OurRowPlayer(n, T), FixedColumnPlayer(n)),     "b"),
-        ("Our vs Uniform",  lambda n, T: (OurRowPlayer(n, T), UniformColumnPlayer(n)),   "g"),
+        ("Our vs Random",   lambda n, T, seed: (OurRowPlayer(n, T), RandColumnPlayer(n, seed)), "r"),
+        ("Our vs Fixed",    lambda n, T, seed: (OurRowPlayer(n, T), FixedColumnPlayer(n)),      "b"),
+        ("Our vs Uniform",  lambda n, T, seed: (OurRowPlayer(n, T), UniformColumnPlayer(n)),    "g"),
     ]
 
     for label, make_players, color in bilateral_player_specs:
         mean_curve = np.zeros(T_max, dtype=float)
         for r in range(config.n_runs):
             seed = config.seed + 10007 * r
-            row_player, col_player = make_players(config.n_actions, T_max)
+            row_player, col_player = make_players(config.n_actions, T_max, seed+1)
             mean_curve += run_match_curve(row_player, col_player, seed, T_max, config.n_actions)
         mean_curve /= max(1, config.n_runs)
         log_curve = np.log10(np.maximum(mean_curve, 1e-12))

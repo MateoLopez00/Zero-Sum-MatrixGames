@@ -218,8 +218,8 @@ class OurAlgBanditPlayer(BanditPlayer):
 
 class RandBanditPlayer(BanditPlayer):
     """Draw a random strategy in each round."""
-    def __init__(self, horizon: int, is_column: bool = False) -> None:
-        self.rng = np.random.default_rng(seed=42)
+    def __init__(self, horizon: int, is_column: bool = False, seed: int = -1) -> None:
+        self.rng = np.random.default_rng(seed=seed)
 
     def reset(self) -> None:
         pass
@@ -295,7 +295,7 @@ def run_match_bandit(
     return float(max(regret, 1e-12))
 
 
-def make_bandit_player(algorithm: str, horizon: int, is_column: bool) -> BanditPlayer:
+def make_bandit_player(algorithm: str, horizon: int, is_column: bool, seed = -1) -> BanditPlayer:
     if algorithm == "UCB":
         return UCBBanditPlayer(horizon, is_column=is_column)
     if algorithm == "EXP3":
@@ -303,18 +303,12 @@ def make_bandit_player(algorithm: str, horizon: int, is_column: bool) -> BanditP
     if algorithm == "OurAlg":
         return OurAlgBanditPlayer(horizon, is_column=is_column)
     if algorithm == "Rand":
-        return RandBanditPlayer(horizon)
+        return RandBanditPlayer(horizon, seed=seed)
     if algorithm == "Fixed":
         return FixedBanditPlayer(horizon)
     if algorithm == "Uniform":
         return UniformBanditPlayer(horizon)
     raise ValueError(f"Unknown algorithm: {algorithm}")
-
-
-def run_algorithm_vs_algorithm(seed: int, horizon: int, row_algo: str, col_algo: str) -> float:
-    row_player = make_bandit_player(row_algo, horizon, is_column=False)
-    col_player = make_bandit_player(col_algo, horizon, is_column=True)
-    return run_match_bandit(row_player, col_player, seed, horizon)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -488,7 +482,7 @@ def run_extension_non_adversarial(config: RunConfig) -> None:
         for r in range(config.n_runs):
             seed_r = config.seed + 10007 * r
             row_p = make_bandit_player(row_algo, T_max, is_column=False)
-            col_p = make_bandit_player(col_algo, T_max, is_column=True)
+            col_p = make_bandit_player(col_algo, T_max, is_column=True, seed=seed_r+1)
             
             curve = run_match_bandit_curve(row_p, col_p, seed_r, T_max)
             mean_curve += curve
