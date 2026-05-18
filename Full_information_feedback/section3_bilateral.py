@@ -474,7 +474,8 @@ def run_match_curve(
         x = row_player.get_strategy()
         y = col_player.get_strategy()
         val = float(x @ A @ y)
-        reg += abs(V - val)
+        # reg += V - val
+        reg += max(V - val, 0)
         regrets[t] = reg
         A_sample = generate_bernoulli_diagonal_matrix(A, rng)
         row_player.update(A_sample, y)
@@ -687,20 +688,10 @@ def run_extension_non_adversarial(config: RunConfig) -> None:
         log_curve = np.log10(np.maximum(mean_curve, 1e-12))
         ax2.plot(curve_axis, log_curve, label=label, color=color, linestyle="-", linewidth=2)
 
-    # Normal run of our algo (from paper) vs adversary for comparison
-    # mean_curve = np.zeros(T_max, dtype=float)
-    # for r in range(config.n_runs):
-    #     seed = config.seed + 10007 * r
-    #     mean_curve += run_official_curve(seed, T_max, config.n_actions)
-    # mean_curve /= max(1, config.n_runs)
-    # log_curve = np.log10(np.maximum(mean_curve, 1e-12))
-    # ax2.plot(curve_axis, log_curve, label="Our-Algo (vs Adv)", color="m", linestyle="--", linewidth=2)
-
     ax2.set_xscale("linear")
     ax2.set_xlabel("Time Horizon T")
-    ax2.set_ylabel("Log10 of Nash Regret (row player)")
+    ax2.set_ylabel("Log10 of Positive Nash Regret (row player)")
     ax2.set_xlim(1, T_max)
-    ax2.yaxis.set_major_locator(MultipleLocator(0.2))
     ax2.grid(True, which="both", ls=":")
     ax2.legend(loc="upper left", fontsize=9)
     ax2.set_title(f"{config.n_actions}×{config.n_actions} Diagonal — Non-adversarial")
