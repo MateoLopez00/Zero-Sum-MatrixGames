@@ -32,6 +32,7 @@ class RunConfig:
     n_runs: int
     seed: int = 7
     preset: str = "quick"
+    task: str = "all"
 
 
 def section4_horizons_for_preset(preset: str) -> tuple[list[int], int]:
@@ -138,7 +139,7 @@ class OurAlgBanditPlayer(BanditPlayer):
         self._init_state()
 
     def _init_state(self) -> None:
-        self.B2 = np.zeros((1, 2, 2), dtype=float)
+        self.B2 = np.zeros((1, 2, 2), dtype=float)  # Empirical mean payoff matrix
         self.U2 = np.zeros((1, 2, 2), dtype=float)
         self.F2 = np.zeros((1, 2, 2), dtype=float)
         self.cnt = np.zeros((1, 2, 2), dtype=int)
@@ -207,12 +208,61 @@ class OurAlgBanditPlayer(BanditPlayer):
         # actualizar B2 con payoff real
         self.cnt[0, i, j] += 1
         c = self.cnt[0, i, j]
-        self.B2[0, i, j] += (payoff - self.B2[0, i, j]) / c
+        self.B2[0, i, j] += (payoff - self.B2[0, i, j]) / c     # Incremental (online) mean update formula
         devs = np.sqrt(self.log_c / (self.cnt + 1.0))
         self.U2 = self.B2 + devs
         self.error[0] = min(self.error[0], float(devs.max()))
         self.jt = j if not self.is_column else i
         self.t += 1
+
+
+class RandBanditPlayer(BanditPlayer):
+    """Draw a random strategy in each round."""
+    def __init__(self, horizon: int, is_column: bool = False, seed: int = -1) -> None:
+        self.rng = np.random.default_rng(seed=seed)
+
+    def reset(self) -> None:
+        pass
+
+    def get_strategy(self) -> np.ndarray:
+        x1 = self.rng.random()
+        return np.asarray([x1, 1.0 - x1], dtype=float)
+
+    def update_bandit(self, i: int, j: int, payoff: float) -> None:
+        pass
+
+
+class FixedBanditPlayer(BanditPlayer):
+    """Always play the same action."""
+    def __init__(self, horizon: int, is_column: bool = False) -> None:
+        self.fixed_strategy = np.asarray([0.0, 1.0], dtype=float)   # Always play action 2 by default
+
+    def reset(self) -> None:
+        pass
+
+    def get_strategy(self) -> np.ndarray:
+        return self.fixed_strategy
+
+    def update_bandit(self, i: int, j: int, payoff: float) -> None:
+        pass
+
+    def switch_action(self) -> None:
+        self.fixed_strategy = (self.fixed_strategy + 1) % 2
+
+
+class UniformBanditPlayer(BanditPlayer):
+    """Play either action with 50 % probability."""
+    def __init__(self, horizon: int, is_column: bool = False) -> None:
+        self.uniform_strategy = np.asarray([0.5, 0.5], dtype=float)
+
+    def reset(self) -> None:
+        pass
+
+    def get_strategy(self) -> np.ndarray:
+        return self.uniform_strategy
+
+    def update_bandit(self, i: int, j: int, payoff: float) -> None:
+        pass
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -245,20 +295,20 @@ def run_match_bandit(
     return float(max(regret, 1e-12))
 
 
-def make_bandit_player(algorithm: str, horizon: int, is_column: bool) -> BanditPlayer:
+def make_bandit_player(algorithm: str, horizon: int, is_column: bool, seed = -1) -> BanditPlayer:
     if algorithm == "UCB":
         return UCBBanditPlayer(horizon, is_column=is_column)
     if algorithm == "EXP3":
         return EXP3BanditPlayer(horizon, is_column=is_column)
     if algorithm == "OurAlg":
         return OurAlgBanditPlayer(horizon, is_column=is_column)
+    if algorithm == "Rand":
+        return RandBanditPlayer(horizon, seed=seed)
+    if algorithm == "Fixed":
+        return FixedBanditPlayer(horizon)
+    if algorithm == "Uniform":
+        return UniformBanditPlayer(horizon)
     raise ValueError(f"Unknown algorithm: {algorithm}")
-
-
-def run_algorithm_vs_algorithm(seed: int, horizon: int, row_algo: str, col_algo: str) -> float:
-    row_player = make_bandit_player(row_algo, horizon, is_column=False)
-    col_player = make_bandit_player(col_algo, horizon, is_column=True)
-    return run_match_bandit(row_player, col_player, seed, horizon)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -327,7 +377,7 @@ def run_adversarial_single_curve(algorithm: str, seed: int, horizon: int, adv: i
 # Run principal
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run(config: RunConfig) -> None:
+def run_reproduction(config: RunConfig) -> None:
     print("Starting run")
     ensure_dir("plots_bilateral_bandit")
 
@@ -365,16 +415,24 @@ def run(config: RunConfig) -> None:
         plt.show()
         print(f"Plot vs Adversary {adv} → guardado")
 
-    # ====================== PLOT 4: BILATERAL (ALGO VS ALGO) ======================
+
+def run_extension_bilateral(config: RunConfig) -> None:
+    """Run and plot extension bilateral (algo vs algo)"""
+    print("Run extension bilateral")
+    ensure_dir("plots_bilateral_bandit")
+
+    T_max = max(config.horizons)
+    curve_axis = np.arange(1, T_max + 1)
+
     fig, ax = plt.subplots(figsize=(11, 6))
 
     bilateral_specs = [
-        ("UCB vs UCB",       "UCB",    "UCB",    "#d62728"),
-        ("EXP3 vs EXP3",     "EXP3",   "EXP3",   "#9467bd"),
-        ("OurAlg vs OurAlg", "OurAlg", "OurAlg", "#8c564b"),
-        ("UCB vs EXP3",      "UCB",    "EXP3",   "#e377c2"),
-        ("UCB vs OurAlg",    "UCB",    "OurAlg", "#7f7f7f"),
-        ("EXP3 vs OurAlg",   "EXP3",   "OurAlg", "#bcbd22"),
+        ("UCB vs UCB",          "UCB",      "UCB",      "#d62728"),
+        ("EXP3 vs EXP3",        "EXP3",     "EXP3",     "#9467bd"),
+        ("OurAlg vs OurAlg",    "OurAlg",   "OurAlg",   "#8c564b"),
+        ("UCB vs EXP3",         "UCB",      "EXP3",     "#e377c2"),
+        ("UCB vs OurAlg",       "UCB",      "OurAlg",   "#7f7f7f"),
+        ("EXP3 vs OurAlg",      "EXP3",     "OurAlg",   "#bcbd22"),
     ]
 
     for label, row_algo, col_algo, color in bilateral_specs:
@@ -403,6 +461,49 @@ def run(config: RunConfig) -> None:
     plt.show()
     print("Plot Bilateral → guardado")
 
+
+def run_extension_non_adversarial(config: RunConfig) -> None:
+    """Run and plot extension non-adversarial"""
+    print("Run extension non-adversarial")
+    ensure_dir("plots_bilateral_bandit")
+
+    T_max = max(config.horizons)
+    curve_axis = np.arange(1, T_max + 1)
+
+    fig, ax = plt.subplots(figsize=(11, 6))
+    
+    bilateral_specs = [
+        ("OurAlg vs Random",    "OurAlg",   "Rand",     "b"),
+        ("OurAlg vs Fixed",     "OurAlg",   "Fixed",    "g"),
+        ("OurAlg vs Uniform",   "OurAlg",   "Uniform",  "c"),
+    ]
+    for label, row_algo, col_algo, color in bilateral_specs:
+        mean_curve = np.zeros(T_max, dtype=float)
+        for r in range(config.n_runs):
+            seed_r = config.seed + 10007 * r
+            row_p = make_bandit_player(row_algo, T_max, is_column=False)
+            col_p = make_bandit_player(col_algo, T_max, is_column=True, seed=seed_r+1)
+            
+            curve = run_match_bandit_curve(row_p, col_p, seed_r, T_max)
+            mean_curve += curve
+        mean_curve /= max(1, config.n_runs)
+        
+        log_curve = np.log10(np.maximum(mean_curve, 1e-12))
+        ax.plot(curve_axis, log_curve, label=label, color=color, linewidth=2)
+
+    ax.set_xlabel("Time Horizon T")
+    ax.set_ylabel("Log10 of Positive Nash Regret (row player)")
+    ax.set_xlim(1, T_max)
+    ax.grid(True, which="both", ls=":")
+    ax.legend(loc="upper left", fontsize=9, ncol=2)
+    ax.set_title(f"2×2 Bandit Game — Non-adversarial\nPreset: {config.preset}")
+
+    plt.tight_layout()
+    plt.savefig(f"plots_bilateral_bandit/section4_bilateral_non-adversarial_{config.preset}.png", dpi=170)
+    plt.show()
+    print("Plot Bilateral → guardado")
+
+
 def run_match_bandit_curve(row_player, col_player, seed, horizon):
     rng = np.random.default_rng(seed)
     row_player.reset()
@@ -416,7 +517,8 @@ def run_match_bandit_curve(row_player, col_player, seed, horizon):
         y = col_player.get_strategy()
 
         val = float(x @ A_GAME @ y)
-        regret += abs(V_STAR - val)
+        # regret += abs(V_STAR - val)
+        regret += max(V_STAR - val, 0)
         regrets[t] = regret
 
         i = rng.choice(2, p=x)
@@ -428,8 +530,7 @@ def run_match_bandit_curve(row_player, col_player, seed, horizon):
 
     return regrets
 
-
-if __name__ == "__main__":
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--preset", type=str, default="quick",
@@ -437,6 +538,11 @@ if __name__ == "__main__":
     )
     parser.add_argument("--n_runs", type=int, default=None)
     parser.add_argument("--seed",   type=int, default=7)
+    parser.add_argument(
+        "--task", 
+        default="all", 
+        choices=["all", "reproduction", "extension_bilateral", "extension_non_adversarial"]
+    )
     args = parser.parse_args()
 
     horizons, default_n_runs = section4_horizons_for_preset(args.preset)
@@ -447,6 +553,18 @@ if __name__ == "__main__":
         n_runs=n_runs,
         seed=args.seed,
         preset=args.preset,
+        task=args.task,
     )
-    run(config)
+    return config
+
+
+if __name__ == "__main__":
+    run_config = parse_args()
+    if run_config.task == "reproduction" or run_config.task == "all":
+        run_reproduction(run_config)
+    if run_config.task == "extension_bilateral" or run_config.task == "all":
+        run_extension_bilateral(run_config)
+    if run_config.task == "extension_non_adversarial" or run_config.task == "all":
+        run_extension_non_adversarial(run_config)
+
     
