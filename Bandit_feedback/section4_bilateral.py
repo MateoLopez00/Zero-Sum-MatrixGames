@@ -490,23 +490,9 @@ def run_extension_non_adversarial(config: RunConfig) -> None:
         
         log_curve = np.log10(np.maximum(mean_curve, 1e-12))
         ax.plot(curve_axis, log_curve, label=label, color=color, linewidth=2)
-    
-    # Add adversaries from paper for the reference
-    # colors = ["c", "m", "y"]
-    # for adv in [1, 2, 3]:
-    #     mean_curve = np.zeros(T_max, dtype=float)
-    #     for r in range(config.n_runs):
-    #         seed_r = config.seed + 10007 * r
-    #         curve = run_adversarial_single_curve("OurAlg", seed_r, T_max, adv)
-    #         mean_curve += curve
-    #     mean_curve /= max(1, config.n_runs)
-
-    #     log_curve = np.log10(np.maximum(mean_curve, 1e-12))
-    #     ax.plot(curve_axis, log_curve, label=f"Adv {adv}", color=colors[adv-1], 
-    #             linestyle="--", linewidth=2)
 
     ax.set_xlabel("Time Horizon T")
-    ax.set_ylabel("log10(Nash Regret)")
+    ax.set_ylabel("Log10 of Positive Nash Regret (row player)")
     ax.set_xlim(1, T_max)
     ax.grid(True, which="both", ls=":")
     ax.legend(loc="upper left", fontsize=9, ncol=2)
@@ -531,7 +517,8 @@ def run_match_bandit_curve(row_player, col_player, seed, horizon):
         y = col_player.get_strategy()
 
         val = float(x @ A_GAME @ y)
-        regret += abs(V_STAR - val)
+        # regret += abs(V_STAR - val)
+        regret += max(V_STAR - val, 0)
         regrets[t] = regret
 
         i = rng.choice(2, p=x)
