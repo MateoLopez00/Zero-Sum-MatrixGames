@@ -402,13 +402,17 @@ a fixed adversarial column player rather than a simultaneously adapting opponent
 \FloatBarrier
 
 \section{Non-Adversarial Column Player Extension}
-The algorithm Arnab et al. minimizes the regret against an adversarial column player, but how does the algorithm react when the column player is not deliberately trying to minimize the row player's return? This extension explores how the algorithm from Arnab et al. adapts to less hostile and presumably easier environments.
+The algorithm by Arnab et al. minimizes the regret against an adversarial column player, but how does the algorithm react when the column player is not deliberately trying to minimize the row player's return? This extension explores how the algorithm from Arnab et al. adapts to less hostile and presumably easier environments.
 
-We use three non-adversarial responses, a fixed response, a uniform response, and a random response. A fixed response is a response where the column player plays the same action in every round. Uniform response means the column player always plays the strategy that gives equal probability to each action, specifically $y_t=\frac{1}{m}\mathbf{1}, \; \forall t \in T$. For the random response you draw a new, random simplex in each round using the Dirichlet distribution, which will then serve as the column player's strategy.
+We use three non-adversarial responses, a fixed response, a uniform response, and a random response. A fixed response is a response where the column player plays the same action in every round. Uniform response means the column player always plays the strategy that gives equal probability to each action, specifically $y_t=\frac{1}{m}\mathbf{1}, \; \forall t \in T$. For the random response you draw a new, random simplex in each round using the Dirichlet distribution, which will then serve as the column player's strategy for that round.
 
-The Nash regret is used to evaluate the performance, like in the adversarial scenario. Thus, the results allow a direct comparison between the alternative scenarios.
+The algorithm from the paper consistently incurs negative Nash regret against all three non-adversarial column players, but from time to time the game value of a round is below the Nash equilibrium's game value. We chose the metric to capture only when the algorithm underperforms the game value in the Nash equilibrium. The metric is the accumulated positive Nash regret. Rounds with a negative Nash regret are ignored.
 
-The algorithm from Arnab et al. still achieves sub-polynomial regret against these weaker opponents, see Fig. \ref{fig:non-adversarial}. The row player incures substatially less regret than he does against an adversarial coloumn player. This affirms the paper's claim that their algorithm achieves polylog(T) regret against any player. 
+In the full information setting the row player quickly learns how to play against a fixed response from the column player or a random response, see Fig. {fig:non-adversarial}. After a short warm-up period the algorithm from Maiti et al. never underperforms the game value in the Nash equilibrium ever again. However, the algorithm struggles when the column player responds with a random strategy. The learned knowledge is of little value and avoiding positive Nash regret can not be guaranteed. 
+
+In the Bandit setting, the row player first needs to explore all entries of the matrix. He fails to do that against a column player, that only plays one fixed column. The algorithm from Maiti et al. does not account for that behavior and the row player regularly incurs positive Nash regret. 
+
+All that said, if you take all rounds into account, the incurred Nash regret is negative against all non-adversarial responses in both settings. This affirms the paper's claim that their algorithm achieves below $\sqrt{T}$ Nash regret against any column player. 
 
 \begin{figure}[!htbp]
   \centering
@@ -424,7 +428,7 @@ The algorithm from Arnab et al. still achieves sub-polynomial regret against the
   \vspace{0.15cm}
   {\small (b)}
 
-  \caption{Row player's incurred regret when playing against a non-adversarial column player: full-information diagonal-game pairings in panel (a), and $2\times2$ bandit pairings in panel (b).}
+  \caption{Row player's accumulated positive Nash regret when playing against a non-adversarial column player: results from full-information setting in panel (a), and results from $2\times2$ bandit setting in panel (b).}
   \label{fig:non-adversarial}
 \end{figure}
 

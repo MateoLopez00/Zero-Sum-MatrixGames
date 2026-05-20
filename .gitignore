@@ -24,3 +24,4 @@ plots/
 # Ignore compilation files but not the report itself
 Final_report/report.*
 !Final_report/report.tex
+!Final_report/report.pdf
